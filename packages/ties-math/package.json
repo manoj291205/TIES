@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"ties-math: tests added in M1\""
+    "build": "tsc -p tsconfig.build.json",
+    "test": "mocha -r ts-node/register \"test/**/*.test.ts\""
   },
   "devDependencies": {
     "typescript": "~5.7.2"
