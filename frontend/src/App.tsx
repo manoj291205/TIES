@@ -13,6 +13,10 @@ import {
 } from "./hooks";
 import { weiToEth } from "./lib/format";
 import { Gallery } from "./screens/Gallery";
+import { Landing } from "./screens/Landing";
+import { Vault } from "./screens/Vault";
+import { TxLog } from "./screens/TxLog";
+import { Docs } from "./screens/Docs";
 import { Marketplace } from "./screens/Marketplace";
 import { Explorer } from "./screens/Explorer";
 import { Buy } from "./screens/Buy";
@@ -78,6 +82,7 @@ function Layout() {
   const { roles, role, setRole } = useRoles();
   const store = useTxStore();
   const [trayOpen, setTrayOpen] = useState(false);
+  const [connectState, setConnectState] = useState<"idle" | "pending" | "failed">("idle");
   const active = location.pathname.split("/")[1] || "markets";
   const pending = store.items.filter((i) => i.state === "pending" || i.state === "awaiting").length;
   const wrongChain = wallet.walletChainId != null && net.status === "wrong";
@@ -106,7 +111,13 @@ function Layout() {
       blockAgo={net.blockAgo}
       pending={pending}
       onPendingClick={() => setTrayOpen((o) => !o)}
-      onConnect={() => void wallet.connect().catch(() => undefined)}
+      onConnect={() => {
+        setConnectState("pending");
+        wallet
+          .connect()
+          .then(() => setConnectState("idle"))
+          .catch(() => setConnectState("failed"));
+      }}
       contracts={contracts}
       headerExtra={
         <Button size="sm" variant="ghost" icon="sliders" onClick={toggleTheme}>
@@ -134,6 +145,48 @@ function Layout() {
         </div>
       }
     >
+      {!wallet.hasWallet ? (
+        <Banner
+          tone="info"
+          title="MetaMask was not found in this browser"
+          actions={
+            <a
+              className="ties-btn ties-btn--secondary ties-btn--sm"
+              href="https://metamask.io/download/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get MetaMask
+            </a>
+          }
+        >
+          You can still browse every event and settlement; connecting a wallet is needed only to
+          send transactions.
+        </Banner>
+      ) : null}
+      {connectState === "pending" ? (
+        <Banner tone="info" title="Open MetaMask to continue">
+          A connection request is waiting in your wallet.
+        </Banner>
+      ) : null}
+      {connectState === "failed" ? (
+        <Banner
+          tone="held"
+          title="The wallet did not connect"
+          actions={
+            <Button size="sm" onClick={() => setConnectState("idle")}>
+              Dismiss
+            </Button>
+          }
+        >
+          The request was declined or is already open in MetaMask.
+        </Banner>
+      ) : null}
+      {net.status === "unreachable" ? (
+        <Banner tone="danger" title="The network could not be reached">
+          Retrying automatically. RPC: <code>{net.info.rpcUrl}</code>
+        </Banner>
+      ) : null}
       {wrongChain ? (
         <Banner
           tone="danger"
@@ -156,7 +209,7 @@ function Layout() {
         </Banner>
       ) : null}
       <Routes>
-        <Route path="/" element={<Navigate to="/markets" replace />} />
+        <Route path="/" element={<Landing />} />
         {import.meta.env.DEV ? <Route path="/__components" element={<Gallery />} /> : null}
         <Route path="/markets" element={<Marketplace />} />
         <Route path="/explorer" element={<Explorer />} />
@@ -164,11 +217,15 @@ function Layout() {
         <Route path="/buy" element={<Buy />} />
         <Route path="/buy/:id" element={<Buy />} />
         <Route path="/policies" element={<Policies />} />
-        {ROUTES.filter(([id]) => !["markets", "explorer", "buy", "policies"].includes(id)).map(
-          ([id, title]) => (
-            <Route key={id} path={`/${id}/*`} element={<Pending title={title} />} />
-          ),
-        )}
+        <Route path="/vault" element={<Vault />} />
+        <Route path="/log" element={<TxLog />} />
+        <Route path="/docs" element={<Docs />} />
+        {ROUTES.filter(
+          ([id]) =>
+            !["markets", "explorer", "buy", "policies", "vault", "log", "docs"].includes(id),
+        ).map(([id, title]) => (
+          <Route key={id} path={`/${id}/*`} element={<Pending title={title} />} />
+        ))}
         <Route path="*" element={<Navigate to="/markets" replace />} />
       </Routes>
     </AppShell>
