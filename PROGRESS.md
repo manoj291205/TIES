@@ -324,3 +324,19 @@ Deviations and assumptions:
   moves it by 5); baselines accept it, TIES rejects it.
 - The 1000-policy baseline settles under the block gas limit; the document gives a labelled
   extrapolation for where the limit would be reached.
+
+### M8 numbers check (checkpoint)
+
+- Every number in `docs/EXPERIMENTS.md` is generated from `experiments/results/summary.json`,
+  which the runner builds from transaction receipts (gas) and contract state (cursors, `Settled`
+  values). Spot checks recomputed the wrong-settlement counts of three scenarios from the raw
+  per-event data and matched the summary exactly. `frontend/public/experiments/latest.json` is
+  byte-identical to the summary.
+- The run is deterministic: three full runs with seed 1 produced identical numbers.
+- Added to the report so the comparison is not one-sided: gas to bind one policy (TIES about
+  378k, baselines about 89k), a "settled at all" table, "n/a" instead of 0 gas for baselines that
+  never settled, and notes that baseline settle gas is a lower bound (repeated holders) and that
+  claims are not measured.
+- The component gallery (sample values) is now loaded only in development builds; the production
+  bundle contains no sample numbers.
+- Open for the owner: TIES binding gas (D16).

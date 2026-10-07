@@ -21,6 +21,8 @@ export interface PolicyOutcome {
 }
 
 export interface EventMetrics {
+  /** Gas of all bind transactions of the event. */
+  bindGas: number;
   oracleTxs: number;
   oracleGas: number;
   settleGas: number;
@@ -72,14 +74,17 @@ export async function playTies(
 ): Promise<EventMetrics> {
   const { engine, book, oracles, sourceWallets } = stack;
   const eventId = Number(await createFlightEvent(book, 1000, 2000));
+  let bindGas = 0;
   for (let i = 0; i < policies.length; i++) {
     const holder = holders[i % holders.length] as Parameters<typeof bindPolicy>[1];
-    await bindPolicy(
-      stack,
-      holder,
-      eventId,
-      policies[i].bucket,
-      ethers.parseEther(policies[i].payoutEth),
+    bindGas += await gasOf(
+      bindPolicy(
+        stack,
+        holder,
+        eventId,
+        policies[i].bucket,
+        ethers.parseEther(policies[i].payoutEth),
+      ),
     );
   }
   const meta = await book.eventMeta(eventId);
@@ -90,6 +95,7 @@ export async function playTies(
     oracleTxs: 0,
     oracleGas: 0,
     settleGas: 0,
+    bindGas,
     rounds: 0,
     auto: 0,
     byDefault: 0,
@@ -202,6 +208,7 @@ export const BASELINE_KEYS: Record<BaselineName, number> = {
 };
 
 export interface BaselineMetrics {
+  bindGas: number;
   oracleTxs: number;
   oracleGas: number;
   settleGas: number;
@@ -225,14 +232,18 @@ export async function playBaseline(
 ): Promise<BaselineMetrics> {
   const now = await time.latest();
   await c.createEvent(eventId, now + 100_000);
+  let bindGas = 0;
   for (let i = 0; i < policies.length; i++) {
     const holder = holders[i % holders.length] as Parameters<typeof bindPolicy>[1];
     const payout = ethers.parseEther(policies[i].payoutEth);
-    await c.connect(holder).bind(eventId, policies[i].bucket, payout, { value: payout / 20n });
+    bindGas += await gasOf(
+      c.connect(holder).bind(eventId, policies[i].bucket, payout, { value: payout / 20n }),
+    );
   }
   const keys =
     name === "median7" ? [0, 1, 2, 3, 4, 5, 6] : committeeOracles.slice(0, BASELINE_KEYS[name]);
   const m: BaselineMetrics = {
+    bindGas,
     oracleTxs: 0,
     oracleGas: 0,
     settleGas: 0,

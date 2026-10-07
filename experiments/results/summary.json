@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T13:27:16.686Z",
+  "generatedAt": "2026-10-07T13:46:56.796Z",
   "config": {
     "eventsPerScenario": 100,
     "policiesPerEvent": 20,
@@ -16,7 +16,9 @@
       "Baselines receive the same source readings as TIES. A forged report is accepted by a baseline (no source signature) and rejected by TIES.",
       "BaselineMedian7 asks seven oracle keys: six distinct sources plus a second key on S2, because flight data has only six sources.",
       "Disputed events are left for the admin: their policies count as held, not as wrong.",
-      "Late oracles are modelled as not revealing (their reveal would revert after the window)."
+      "Late oracles are modelled as not revealing (their reveal would revert after the window).",
+      "Policies are bound by three rotating holders. A baseline's per-policy loop gets cheaper when holders repeat (warm storage), so baseline settle gas here is a lower bound.",
+      "Claims are not measured: TIES pays out one claim transaction per paying policy; the baselines pay one claim per holder."
     ]
   },
   "scenarios": {
@@ -31,9 +33,10 @@
         "defaultRate": 0.234,
         "heldRate": 0,
         "oracleTxsPerEvent": 6.64,
-        "oracleGasPerEvent": 684783.88,
+        "oracleGasPerEvent": 684783.64,
         "settleGasPerEvent": 1220961.87,
         "gasPerPolicy": 61048.0935,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 1.2,
         "firstRoundInsufficientRate": 0,
         "statuses": {
@@ -48,6 +51,7 @@
           "oracleGasPerEvent": 95062.4,
           "settleGasPerEvent": 223497,
           "gasPerPolicy": 11174.85,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -57,6 +61,7 @@
           "oracleGasPerEvent": 173024.8,
           "settleGasPerEvent": 225842.06,
           "gasPerPolicy": 11292.103,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -66,6 +71,7 @@
           "oracleGasPerEvent": 250987.08,
           "settleGasPerEvent": 240250.35,
           "gasPerPolicy": 12012.5175,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -75,6 +81,7 @@
           "oracleGasPerEvent": 562837.04,
           "settleGasPerEvent": 244759.46,
           "gasPerPolicy": 12237.973,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -92,9 +99,10 @@
         "defaultRate": 0.268,
         "heldRate": 0,
         "oracleTxsPerEvent": 10.04,
-        "oracleGasPerEvent": 1027659.6,
+        "oracleGasPerEvent": 1027660.2,
         "settleGasPerEvent": 2886011.43,
         "gasPerPolicy": 144300.5715,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.95,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -109,6 +117,7 @@
           "oracleGasPerEvent": 95062.52,
           "settleGasPerEvent": 223486.7,
           "gasPerPolicy": 11174.335,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -118,6 +127,7 @@
           "oracleGasPerEvent": 173025.4,
           "settleGasPerEvent": 223244,
           "gasPerPolicy": 11162.2,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -127,6 +137,7 @@
           "oracleGasPerEvent": 250988.28,
           "settleGasPerEvent": 237108,
           "gasPerPolicy": 11855.4,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -136,6 +147,7 @@
           "oracleGasPerEvent": 562838.12,
           "settleGasPerEvent": 244494.79,
           "gasPerPolicy": 12224.7395,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -153,9 +165,10 @@
         "defaultRate": 0.265,
         "heldRate": 0,
         "oracleTxsPerEvent": 8.58,
-        "oracleGasPerEvent": 880326.5,
+        "oracleGasPerEvent": 880324.94,
         "settleGasPerEvent": 2098410.1,
         "gasPerPolicy": 104920.505,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.15,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -170,6 +183,7 @@
           "oracleGasPerEvent": 95062.28,
           "settleGasPerEvent": 223359.8,
           "gasPerPolicy": 11167.99,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -179,6 +193,7 @@
           "oracleGasPerEvent": 173024.44,
           "settleGasPerEvent": 225775.52,
           "gasPerPolicy": 11288.776,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -188,6 +203,7 @@
           "oracleGasPerEvent": 250986.6,
           "settleGasPerEvent": 239909.95,
           "gasPerPolicy": 11995.4975,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -197,6 +213,7 @@
           "oracleGasPerEvent": 562835.72,
           "settleGasPerEvent": 244625.3,
           "gasPerPolicy": 12231.265,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -214,9 +231,10 @@
         "defaultRate": 0.3205,
         "heldRate": 0,
         "oracleTxsPerEvent": 8.02,
-        "oracleGasPerEvent": 823729.54,
+        "oracleGasPerEvent": 823729.66,
         "settleGasPerEvent": 1865589.94,
         "gasPerPolicy": 93279.497,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 1.8,
         "firstRoundInsufficientRate": 0.47,
         "statuses": {
@@ -231,6 +249,7 @@
           "oracleGasPerEvent": 95062.4,
           "settleGasPerEvent": 223365.98,
           "gasPerPolicy": 11168.299,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -240,6 +259,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 225733.7,
           "gasPerPolicy": 11286.685,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -249,6 +269,7 @@
           "oracleGasPerEvent": 250987.08,
           "settleGasPerEvent": 240028.57,
           "gasPerPolicy": 12001.4285,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -258,6 +279,7 @@
           "oracleGasPerEvent": 562835.72,
           "settleGasPerEvent": 244744.82,
           "gasPerPolicy": 12237.241,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -275,9 +297,10 @@
         "defaultRate": 0.2595,
         "heldRate": 0,
         "oracleTxsPerEvent": 7.46,
-        "oracleGasPerEvent": 725081.74,
+        "oracleGasPerEvent": 725081.26,
         "settleGasPerEvent": 1990936.16,
         "gasPerPolicy": 99546.808,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.13,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -292,6 +315,7 @@
           "oracleGasPerEvent": 95062.64,
           "settleGasPerEvent": 223432.52,
           "gasPerPolicy": 11171.626,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -301,6 +325,7 @@
           "oracleGasPerEvent": 173025.16,
           "settleGasPerEvent": 225844.12,
           "gasPerPolicy": 11292.206,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -310,6 +335,7 @@
           "oracleGasPerEvent": 173025.16,
           "settleGasPerEvent": 239843.11,
           "gasPerPolicy": 11992.1555,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -319,6 +345,7 @@
           "oracleGasPerEvent": 484874.88,
           "settleGasPerEvent": 0,
           "gasPerPolicy": 0,
+          "bindGasPerPolicy": 87878.322,
           "exceedsBlockLimit": 0
         }
       },
@@ -336,9 +363,10 @@
         "defaultRate": 0.259,
         "heldRate": 0,
         "oracleTxsPerEvent": 7.48,
-        "oracleGasPerEvent": 727037.44,
+        "oracleGasPerEvent": 727036.12,
         "settleGasPerEvent": 1976349.53,
         "gasPerPolicy": 98817.4765,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.11,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -353,6 +381,7 @@
           "oracleGasPerEvent": 95062.28,
           "settleGasPerEvent": 223466.1,
           "gasPerPolicy": 11173.305,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -362,6 +391,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 225827.64,
           "gasPerPolicy": 11291.382,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -371,6 +401,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 239787.01,
           "gasPerPolicy": 11989.3505,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -380,6 +411,7 @@
           "oracleGasPerEvent": 484874.76,
           "settleGasPerEvent": 0,
           "gasPerPolicy": 0,
+          "bindGasPerPolicy": 87878.322,
           "exceedsBlockLimit": 0
         }
       },
@@ -397,9 +429,10 @@
         "defaultRate": 0.256,
         "heldRate": 0,
         "oracleTxsPerEvent": 6.52,
-        "oracleGasPerEvent": 672212.76,
+        "oracleGasPerEvent": 672213.12,
         "settleGasPerEvent": 1999450.12,
         "gasPerPolicy": 99972.506,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.15,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -414,6 +447,7 @@
           "oracleGasPerEvent": 95062.28,
           "settleGasPerEvent": 223389.26,
           "gasPerPolicy": 11169.463,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -423,6 +457,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 225721.34,
           "gasPerPolicy": 11286.067,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -432,6 +467,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 239689.2,
           "gasPerPolicy": 11984.46,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -441,6 +477,7 @@
           "oracleGasPerEvent": 484874.52,
           "settleGasPerEvent": 0,
           "gasPerPolicy": 0,
+          "bindGasPerPolicy": 87878.322,
           "exceedsBlockLimit": 0
         }
       },
@@ -458,9 +495,10 @@
         "defaultRate": 1,
         "heldRate": 0,
         "oracleTxsPerEvent": 6.08,
-        "oracleGasPerEvent": 628525.88,
+        "oracleGasPerEvent": 628522.4,
         "settleGasPerEvent": 1125839.14,
         "gasPerPolicy": 56291.957,
+        "bindGasPerPolicy": 359228.502,
         "roundsPerEvent": 1.02,
         "firstRoundInsufficientRate": 0,
         "statuses": {
@@ -475,6 +513,7 @@
           "oracleGasPerEvent": 95062.52,
           "settleGasPerEvent": 219254.46,
           "gasPerPolicy": 10962.723,
+          "bindGasPerPolicy": 88747.162,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -484,6 +523,7 @@
           "oracleGasPerEvent": 173025.04,
           "settleGasPerEvent": 222855.14,
           "gasPerPolicy": 11142.757,
+          "bindGasPerPolicy": 88747.162,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -493,6 +533,7 @@
           "oracleGasPerEvent": 250987.44,
           "settleGasPerEvent": 237184.97,
           "gasPerPolicy": 11859.2485,
+          "bindGasPerPolicy": 88747.162,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -502,6 +543,7 @@
           "oracleGasPerEvent": 562837.16,
           "settleGasPerEvent": 242511.2,
           "gasPerPolicy": 12125.56,
+          "bindGasPerPolicy": 88725.162,
           "exceedsBlockLimit": 0
         }
       },
@@ -519,9 +561,10 @@
         "defaultRate": 0.26,
         "heldRate": 0,
         "oracleTxsPerEvent": 8.46,
-        "oracleGasPerEvent": 786259.1,
+        "oracleGasPerEvent": 786263.42,
         "settleGasPerEvent": 2000093.89,
         "gasPerPolicy": 100004.6945,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 2.14,
         "firstRoundInsufficientRate": 1,
         "statuses": {
@@ -536,6 +579,7 @@
           "oracleGasPerEvent": 95062.52,
           "settleGasPerEvent": 223451.06,
           "gasPerPolicy": 11172.553,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -545,6 +589,7 @@
           "oracleGasPerEvent": 173025.4,
           "settleGasPerEvent": 223244,
           "gasPerPolicy": 11162.2,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -554,6 +599,7 @@
           "oracleGasPerEvent": 250987.68,
           "settleGasPerEvent": 240335.96,
           "gasPerPolicy": 12016.798,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -563,6 +609,7 @@
           "oracleGasPerEvent": 562837.64,
           "settleGasPerEvent": 245789.06,
           "gasPerPolicy": 12289.453,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -580,9 +627,10 @@
         "defaultRate": 0.2495,
         "heldRate": 0,
         "oracleTxsPerEvent": 6.12,
-        "oracleGasPerEvent": 632556.44,
+        "oracleGasPerEvent": 632555.96,
         "settleGasPerEvent": 1108396.65,
         "gasPerPolicy": 55419.8325,
+        "bindGasPerPolicy": 377683.0085,
         "roundsPerEvent": 1.04,
         "firstRoundInsufficientRate": 0,
         "statuses": {
@@ -597,6 +645,7 @@
           "oracleGasPerEvent": 95062.4,
           "settleGasPerEvent": 223372.16,
           "gasPerPolicy": 11168.608,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "avg2": {
@@ -606,6 +655,7 @@
           "oracleGasPerEvent": 173024.68,
           "settleGasPerEvent": 225850.3,
           "gasPerPolicy": 11292.515,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median3": {
@@ -615,6 +665,7 @@
           "oracleGasPerEvent": 250987.08,
           "settleGasPerEvent": 240114.34,
           "gasPerPolicy": 12005.717,
+          "bindGasPerPolicy": 88746.772,
           "exceedsBlockLimit": 0
         },
         "median7": {
@@ -624,6 +675,7 @@
           "oracleGasPerEvent": 562837.88,
           "settleGasPerEvent": 243601.68,
           "gasPerPolicy": 12180.084,
+          "bindGasPerPolicy": 88724.772,
           "exceedsBlockLimit": 0
         }
       },
@@ -821,5 +873,5 @@
       }
     ]
   },
-  "elapsedSeconds": 756
+  "elapsedSeconds": 654
 }

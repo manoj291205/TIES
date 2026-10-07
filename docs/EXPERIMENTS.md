@@ -2,7 +2,7 @@
 
 Generated from `experiments/results/summary.json` by `npm run experiments:report`. Do not edit by hand.
 
-Run: 2026-10-07T13:27:16.686Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 756 s.
+Run: 2026-10-07T13:46:56.796Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 654 s.
 
 ## Method
 
@@ -21,6 +21,8 @@ Notes recorded by the runner:
 - BaselineMedian7 asks seven oracle keys: six distinct sources plus a second key on S2, because flight data has only six sources.
 - Disputed events are left for the admin: their policies count as held, not as wrong.
 - Late oracles are modelled as not revealing (their reveal would revert after the window).
+- Policies are bound by three rotating holders. A baseline's per-policy loop gets cheaper when holders repeat (warm storage), so baseline settle gas here is a lower bound.
+- Claims are not measured: TIES pays out one claim transaction per paying policy; the baselines pay one claim per holder.
 
 ## Scenarios
 
@@ -92,14 +94,31 @@ A baseline that never reaches its quorum leaves its policies unsettled, which th
 | --------------------- | --------------- | ---------------------------------------- | -------------------------- | ----------------------- | -------------------------- | ----------------------- | ------------------------- |
 | `honest`              | 684,784         | 1,220,962                                | 61,048                     | 223,497                 | 225,842                    | 240,250                 | 244,759                   |
 | `compromised-feed`    | 1,027,660       | 2,886,011                                | 144,301                    | 223,487                 | 223,244                    | 237,108                 | 244,495                   |
-| `two-keys-one-feed`   | 880,327         | 2,098,410                                | 104,921                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
+| `two-keys-one-feed`   | 880,325         | 2,098,410                                | 104,921                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
 | `noisy-source`        | 823,730         | 1,865,590                                | 93,279                     | 223,366                 | 225,734                    | 240,029                 | 244,745                   |
-| `late-source`         | 725,082         | 1,990,936                                | 99,547                     | 223,433                 | 225,844                    | 239,843                 | 0                         |
-| `silent-source`       | 727,037         | 1,976,350                                | 98,817                     | 223,466                 | 225,828                    | 239,787                 | 0                         |
-| `unavailable-source`  | 672,213         | 1,999,450                                | 99,973                     | 223,389                 | 225,721                    | 239,689                 | 0                         |
-| `borderline`          | 628,526         | 1,125,839                                | 56,292                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
-| `forged-report`       | 786,259         | 2,000,094                                | 100,005                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
+| `late-source`         | 725,081         | 1,990,936                                | 99,547                     | 223,433                 | 225,844                    | 239,843                 | n/a (never settled)       |
+| `silent-source`       | 727,036         | 1,976,350                                | 98,817                     | 223,466                 | 225,828                    | 239,787                 | n/a (never settled)       |
+| `unavailable-source`  | 672,213         | 1,999,450                                | 99,973                     | 223,389                 | 225,721                    | 239,689                 | n/a (never settled)       |
+| `borderline`          | 628,522         | 1,125,839                                | 56,292                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
+| `forged-report`       | 786,263         | 2,000,094                                | 100,005                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
 | `inconsistent-rounds` | 632,556         | 1,108,397                                | 55,420                     | 223,372                 | 225,850                    | 240,114                 | 243,602                   |
+
+### Gas to bind one policy
+
+TIES pays for the threshold index and the capacity checks at binding time; the baselines only store the policy.
+
+| Scenario              | TIES    | Single oracle | 2-report average | 2-of-3 median | 7-oracle median |
+| --------------------- | ------- | ------------- | ---------------- | ------------- | --------------- |
+| `honest`              | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `compromised-feed`    | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `two-keys-one-feed`   | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `noisy-source`        | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `late-source`         | 377,683 | 88,747        | 88,747           | 88,747        | 87,878          |
+| `silent-source`       | 377,683 | 88,747        | 88,747           | 88,747        | 87,878          |
+| `unavailable-source`  | 377,683 | 88,747        | 88,747           | 88,747        | 87,878          |
+| `borderline`          | 359,229 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `forged-report`       | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
+| `inconsistent-rounds` | 377,683 | 88,747        | 88,747           | 88,747        | 88,725          |
 
 ## Settling gas against the number of policies
 

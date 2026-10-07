@@ -145,7 +145,11 @@ for (const [name, r] of Object.entries(summary.scenarios)) {
     int(r.ties.oracleGasPerEvent),
     int(r.ties.settleGasPerEvent),
     int(r.ties.gasPerPolicy),
-    ...B.map((b) => int(r.baselines[b].settleGasPerEvent)),
+    ...B.map((b) =>
+      r.baselines[b].settledRate > 0
+        ? int(r.baselines[b].settleGasPerEvent)
+        : "n/a (never settled)",
+    ),
   ]);
 }
 out.push("\n### Gas per event\n");
@@ -161,6 +165,20 @@ out.push(
     rows4,
   ),
 );
+
+const bindRows: string[][] = [];
+for (const [name, r] of Object.entries(summary.scenarios)) {
+  bindRows.push([
+    `\`${name}\``,
+    int(r.ties.bindGasPerPolicy ?? 0),
+    ...B.map((b) => int(r.baselines[b].bindGasPerPolicy ?? 0)),
+  ]);
+}
+out.push("\n### Gas to bind one policy\n");
+out.push(
+  "TIES pays for the threshold index and the capacity checks at binding time; the baselines only store the policy.\n",
+);
+out.push(table(["Scenario", "TIES", ...B.map((b) => NAMES[b])], bindRows));
 
 out.push("\n## Settling gas against the number of policies\n");
 out.push(

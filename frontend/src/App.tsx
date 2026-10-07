@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppShell, Banner, Button, EmptyState, PageHeader, TxToast, TxTray } from "./components";
 import {
@@ -12,7 +12,10 @@ import {
   useWallet,
 } from "./hooks";
 import { weiToEth } from "./lib/format";
-import { Gallery } from "./screens/Gallery";
+// The component gallery holds sample values; it is loaded only in development builds.
+const Gallery = import.meta.env.DEV
+  ? lazy(() => import("./screens/Gallery").then((m) => ({ default: m.Gallery })))
+  : () => null;
 import { Landing } from "./screens/Landing";
 import { Vault } from "./screens/Vault";
 import { TxLog } from "./screens/TxLog";
@@ -215,7 +218,16 @@ function Layout() {
       ) : null}
       <Routes>
         <Route path="/" element={<Landing />} />
-        {import.meta.env.DEV ? <Route path="/__components" element={<Gallery />} /> : null}
+        {import.meta.env.DEV ? (
+          <Route
+            path="/__components"
+            element={
+              <Suspense fallback={null}>
+                <Gallery />
+              </Suspense>
+            }
+          />
+        ) : null}
         <Route path="/markets" element={<Marketplace />} />
         <Route path="/explorer" element={<Explorer />} />
         <Route path="/explorer/:id" element={<Explorer />} />

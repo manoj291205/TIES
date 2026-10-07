@@ -114,6 +114,7 @@ interface TiesAgg {
   oracleGasPerEvent: number;
   settleGasPerEvent: number;
   gasPerPolicy: number;
+  bindGasPerPolicy: number;
   roundsPerEvent: number;
   firstRoundInsufficientRate: number;
   statuses: Record<string, number>;
@@ -125,6 +126,7 @@ interface BaselineAgg {
   oracleGasPerEvent: number;
   settleGasPerEvent: number;
   gasPerPolicy: number;
+  bindGasPerPolicy: number;
   exceedsBlockLimit: number;
 }
 
@@ -146,6 +148,7 @@ function aggTies(ms: EventMetrics[]): TiesAgg {
     oracleGasPerEvent: mean(ms.map((m) => m.oracleGas)),
     settleGasPerEvent: mean(ms.map((m) => m.settleGas)),
     gasPerPolicy: sum(ms.map((m) => m.settleGas)) / policies,
+    bindGasPerPolicy: sum(ms.map((m) => m.bindGas)) / policies,
     roundsPerEvent: mean(ms.map((m) => m.rounds)),
     firstRoundInsufficientRate: mean(ms.map((m) => (m.firstRoundInsufficient ? 1 : 0))),
     statuses,
@@ -164,6 +167,7 @@ function aggBaseline(ms: BaselineMetrics[]): BaselineAgg {
     settleGasPerEvent: mean(settled.map((m) => m.settleGas)),
     gasPerPolicy:
       sum(settled.map((m) => m.settleGas)) / Math.max(1, sum(settled.map((m) => m.total))),
+    bindGasPerPolicy: sum(ms.map((m) => m.bindGas)) / policies,
     exceedsBlockLimit: sum(ms.map((m) => (m.exceedsBlockLimit ? 1 : 0))),
   };
 }
@@ -452,6 +456,8 @@ async function main() {
         "BaselineMedian7 asks seven oracle keys: six distinct sources plus a second key on S2, because flight data has only six sources.",
         "Disputed events are left for the admin: their policies count as held, not as wrong.",
         "Late oracles are modelled as not revealing (their reveal would revert after the window).",
+        "Policies are bound by three rotating holders. A baseline's per-policy loop gets cheaper when holders repeat (warm storage), so baseline settle gas here is a lower bound.",
+        "Claims are not measured: TIES pays out one claim transaction per paying policy; the baselines pay one claim per holder.",
       ],
     },
     scenarios,
