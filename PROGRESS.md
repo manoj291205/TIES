@@ -7,7 +7,7 @@
 - [x] M2 Evidence, settlement, disputes (`m2-settlement`)
 - [x] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
 - [x] M4 Off-chain services and one-command local stack (`m4-services`)
-- [ ] M5 Frontend foundation and design system (`m5-frontend-foundation`)
+- [x] M5 Frontend foundation and design system (`m5-frontend-foundation`)
 - [ ] M6 Core user screens (`m6-core-screens`)
 - [ ] M7 Remaining role screens (`m7-role-screens`)
 - [ ] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
@@ -195,3 +195,29 @@ Known issues:
 
 - The seeded demo events stay open and are worked on by the keeper and nodes as scenarios advance
   time; their windows can be skipped. Harmless on a demo chain.
+
+### M5
+
+Built:
+
+- Design tokens and component CSS imported; every design component rebuilt as a typed React
+  component in `frontend/src/components` (controls, status chips, panels, tables, transaction
+  flow, tray and toast, shell and header, threshold slider, interval chart, round timeline,
+  source list, N_eff gauge, money split, escalation panel, event card and log row).
+- `/__components` gallery route (development builds only) for comparing with the previews.
+- Hooks: `useWallet`, `useNetwork`, `useContracts`, `useTx` (six-state machine, global tray,
+  toasts, decoded events and reverts), `useContractEvents` (one block-driven log fetch),
+  `useEventState`, `useVault`, `useRoles`.
+- Libraries: network config (31337 and 11155111, add and switch chain), ABI and deployment loader,
+  custom-error decoder with plain-language messages, formatting helpers.
+- App shell with role-filtered nav, live block indicator, network chip, pending-tx tray,
+  light/dark toggle, wrong-network and not-deployed banners; routes for every screen are
+  placeholders until M6 and M7.
+- `docs/DESIGN_MAPPING.md`.
+
+Tests: 6 frontend unit tests (formatting, settlement rule per bar, error decoding).
+
+Known issues:
+
+- Not yet checked against MetaMask in a real browser session, and the screens are placeholders.
+- The in-browser check so far is the gallery rendering in dark mode without console errors.

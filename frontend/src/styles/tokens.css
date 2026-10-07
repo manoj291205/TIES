@@ -1,0 +1,186 @@
+/* TIES — generated from tokens.json */
+:root,
+[data-theme="light"] {
+  --bg: #f3f4f2;
+  --surface-1: #ffffff;
+  --surface-2: #eceeeb;
+  --surface-3: #e1e4e0;
+  --line: #d8dcd7;
+  --line-strong: #7d868f;
+  --grid: #e5e8e4;
+  --ink: #0f161c;
+  --ink-muted: #4d5862;
+  --ink-subtle: #626c76;
+  --ink-inverse: #ffffff;
+  --action: #14212c;
+  --action-hover: #26384a;
+  --focus: #2a6ade;
+  --link: #1d5bc4;
+  --pay: #0c7d67;
+  --pay-ink: #0a6a57;
+  --pay-wash: #ddf1eb;
+  --held: #e2a034;
+  --held-ink: #7f4c00;
+  --held-wash: #fbefd8;
+  --interval: rgba(226, 160, 52, 0.18);
+  --nopay: #a7b0b8;
+  --nopay-ink: #4d5862;
+  --nopay-wash: #eaedee;
+  --danger: #c3342a;
+  --danger-ink: #a12419;
+  --danger-wash: #fbe5e2;
+  --info: #2a6ade;
+  --info-ink: #1d55b8;
+  --info-wash: #e3ebfa;
+  --mine: #2a6ade;
+  --net-local: #b07800;
+  --net-sepolia: #5a5fc8;
+  --scrim: rgba(11, 15, 19, 0.48);
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(15, 22, 28, 0.06);
+  --elev-2: 0 6px 18px rgba(15, 22, 28, 0.1), 0 1px 3px rgba(15, 22, 28, 0.08);
+  --elev-3: 0 18px 48px rgba(15, 22, 28, 0.18);
+}
+[data-theme="dark"] {
+  --bg: #0b0f13;
+  --surface-1: #12171d;
+  --surface-2: #181e25;
+  --surface-3: #222a33;
+  --line: #28313b;
+  --line-strong: #6a7682;
+  --grid: #1d242c;
+  --ink: #e7ecf0;
+  --ink-muted: #a3aeb9;
+  --ink-subtle: #8995a1;
+  --ink-inverse: #0b0f13;
+  --action: #dde6ed;
+  --action-hover: #c3d0db;
+  --focus: #6fa3ff;
+  --link: #82b2ff;
+  --pay: #33b89b;
+  --pay-ink: #63d4b9;
+  --pay-wash: #0f2e28;
+  --held: #e3a947;
+  --held-ink: #f2c274;
+  --held-wash: #36280f;
+  --interval: rgba(227, 169, 71, 0.16);
+  --nopay: #56626e;
+  --nopay-ink: #adb8c3;
+  --nopay-wash: #1c232a;
+  --danger: #ff6f61;
+  --danger-ink: #ff8d82;
+  --danger-wash: #3a1612;
+  --info: #6fa3ff;
+  --info-ink: #8db6ff;
+  --info-wash: #13233b;
+  --mine: #6fa3ff;
+  --net-local: #e3b443;
+  --net-sepolia: #9da1f2;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-2: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.5);
+  --elev-3: 0 18px 48px rgba(0, 0, 0, 0.6);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-16: 64px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+  --frame-width: 1440px;
+  --frame-min: 1280px;
+  --sidebar-width: 224px;
+  --header-height: 56px;
+  --content-max: 1184px;
+  --z-header: 20;
+  --z-tray: 40;
+  --z-toast: 50;
+  --z-modal: 60;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+.ts-display {
+  font-family: var(--font-sans);
+  font-size: 40px;
+  line-height: 48px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ts-h1 {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+}
+.ts-h2 {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.ts-h3 {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.ts-body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.ts-body-sm {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.ts-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.ts-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.ts-mono-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.ts-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.ts-mono-lg {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+}
+.ts-mono-xl {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
