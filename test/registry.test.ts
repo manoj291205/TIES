@@ -71,7 +71,12 @@ describe("TIESRegistry", () => {
         mu: { mu: ONE + 1n },
         eta: { eta: 0n },
         zByRound: { zByRound: [1n] },
+        zByRoundTooLong: { zByRound: Array.from({ length: 33 }, () => ONE) },
         curveLength: { curveProb: [ONE] },
+        curveTooLong: {
+          curveTheta: Array.from({ length: 33 }, (_, i) => BigInt(i)),
+          curveProb: Array.from({ length: 33 }, () => ONE),
+        },
         curveProb: { curveProb: FLIGHT_DELAY_PARAMS.curveProb.map(() => ONE + 1n) },
         curveTheta: { curveTheta: [...FLIGHT_DELAY_PARAMS.curveTheta].reverse() },
         curveIncreasing: {

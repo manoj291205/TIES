@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { network } from "hardhat";
 import { ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -41,7 +42,9 @@ describe("Off-chain services (integration)", function () {
   let runner: ScenarioRunner;
   const provider = makeProvider(rpcUrl, 31337);
 
-  before(async () => {
+  before(async function () {
+    // The spawned node runs the normal build; coverage builds are instrumented and too large for it.
+    if (network.config.allowUnlimitedContractSize) this.skip();
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ties-it-"));
     process.env.TIES_DEPLOYMENTS_DIR = tmp;
 

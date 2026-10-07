@@ -27,6 +27,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     /// @notice Gas that must remain before the learning update runs, so a caller cannot make it
     ///         fail on purpose by supplying too little gas.
     uint256 public constant LEARNING_GAS_FLOOR = 6_000_000;
+    /// @notice Gas forwarded when returning a bond, so the recipient cannot block a resolution.
+    uint256 public constant BOND_REFUND_GAS = 50_000;
 
     /// @notice Lifecycle of an event after binding closes. Before the first round the event is
     ///         OPEN or CLOSED purely by time (status NONE here).
@@ -114,6 +116,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     mapping(uint256 => mapping(address => bool)) private _reported;
     mapping(uint256 => mapping(uint8 => address[])) private _committee;
     mapping(uint256 => mapping(uint8 => mapping(address => bytes32))) private _commits;
+    /// @notice Returned bonds waiting to be withdrawn by challengers that could not receive them.
+    mapping(address => uint256) public bondOwed;
 
     /// @notice A round opened for an event.
     event RoundOpened(
@@ -175,6 +179,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     event EventFinalized(uint256 indexed eventId, uint256 finalValue);
     /// @notice The learning update reverted; settlement went ahead without it.
     event LearningSkipped(uint256 indexed eventId);
+    /// @notice A returned bond could not be sent and is kept for `withdrawBond`.
+    event BondOwed(address indexed challenger, uint256 amount);
 
     error WrongStatus(uint256 eventId, Status status);
     error WrongRound(uint8 expected, uint8 given);
@@ -197,6 +203,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     error CursorRegression();
     error BondTransferFailed();
     error InsufficientGasForLearning();
+    error NothingOwed();
 
     /// @param vault_ The liquidity vault (this contract needs ENGINE_ROLE on it).
     /// @param book_ The policy book.
@@ -433,21 +440,27 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         st.hasInterval = true;
 
         uint256 bond = st.bond;
+        bool upheld;
         if (bond > 0) {
             (uint8 category, uint32 version, , ) = book.eventMeta(eventId);
             TIESRegistry.CategoryParams memory p = registry.getParams(category, version);
             uint256 tolerance = Math.mulDiv(p.eps, p.s, WAD);
             uint256 gap = finalValue > st.vLast ? finalValue - st.vLast : st.vLast - finalValue;
             st.bond = 0;
-            address to = gap > tolerance ? st.challenger : address(vault);
-            (bool ok, ) = to.call{value: bond}("");
-            if (!ok) {
-                (bool toVault, ) = address(vault).call{value: bond}("");
-                if (!toVault) revert BondTransferFailed();
-            }
+            upheld = gap > tolerance;
         }
         emit DisputeResolved(eventId, finalValue);
         _finalizeEvent(eventId, st, finalValue);
+        if (bond > 0) _payBond(st.challenger, bond, upheld);
+    }
+
+    /// @notice Withdraw a returned challenge bond that could not be sent directly.
+    function withdrawBond() external nonReentrant {
+        uint256 amount = bondOwed[msg.sender];
+        if (amount == 0) revert NothingOwed();
+        bondOwed[msg.sender] = 0;
+        (bool ok, ) = msg.sender.call{value: amount}("");
+        if (!ok) revert BondTransferFailed();
     }
 
     // ------------------------------------------------------------------------ views
@@ -846,6 +859,22 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         }
         out = new address[](count);
         for (uint256 i = 0; i < count; i++) out[i] = tmp[i];
+    }
+
+    /// @dev Runs last in resolveDispute. A returned bond is pushed with a gas cap so a challenger
+    ///      contract cannot block the resolution; if the push fails the bond is kept for
+    ///      `withdrawBond`. A forfeited bond goes to the vault.
+    function _payBond(address challenger, uint256 bond, bool upheld) private {
+        if (upheld) {
+            (bool ok, ) = challenger.call{value: bond, gas: BOND_REFUND_GAS}("");
+            if (!ok) {
+                bondOwed[challenger] += bond;
+                emit BondOwed(challenger, bond);
+            }
+            return;
+        }
+        (bool toVault, ) = address(vault).call{value: bond}("");
+        if (!toVault) revert BondTransferFailed();
     }
 
     function _max(int256 a, int256 b) private pure returns (int256) {

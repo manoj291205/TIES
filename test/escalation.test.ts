@@ -648,6 +648,9 @@ describe("Escalation, recruitment and learning", () => {
         learning,
         "AccessControlUnauthorizedAccount",
       );
+      await expect(
+        learning.connect(admin).setEngine(ethers.ZeroAddress),
+      ).to.be.revertedWithCustomError(learning, "ZeroAddress");
     });
 
     it("exposes oracle and dependence views to the planner", async () => {

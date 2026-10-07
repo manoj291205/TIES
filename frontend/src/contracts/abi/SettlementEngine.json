@@ -178,6 +178,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "NothingOwed",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -273,6 +278,25 @@
     ],
     "name": "WrongStatus",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "challenger",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BondOwed",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -724,6 +748,19 @@
   },
   {
     "inputs": [],
+    "name": "BOND_REFUND_GAS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "CHALLENGE_BOND",
     "outputs": [
       {
@@ -772,6 +809,25 @@
     "name": "applyDefault",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bondOwed",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1410,6 +1466,13 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawBond",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

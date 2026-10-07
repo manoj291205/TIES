@@ -35,6 +35,7 @@ contract LearningModule is AccessControl {
 
     error NotEngine();
     error EngineAlreadySet();
+    error ZeroAddress();
 
     /// @param registry_ The registry.
     /// @param book_ The policy book.
@@ -48,6 +49,7 @@ contract LearningModule is AccessControl {
     /// @notice Set the settlement engine (once).
     /// @param engine_ The engine address.
     function setEngine(address engine_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (engine_ == address(0)) revert ZeroAddress();
         if (engine != address(0)) revert EngineAlreadySet();
         engine = engine_;
     }

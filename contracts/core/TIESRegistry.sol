@@ -16,6 +16,8 @@ contract TIESRegistry is AccessControl {
     uint256 public constant WAD = 1e18;
     /// @notice Upper bound on oracles per category; bounds every loop over the oracle list.
     uint256 public constant MAX_ORACLES_PER_CATEGORY = 64;
+    /// @notice Upper bound on the exceedance-curve points and z values; bounds pricing loops.
+    uint256 public constant MAX_PARAM_POINTS = 32;
 
     /// @notice Full parameter set of a category. Value units are described per field.
     struct CategoryParams {
@@ -524,9 +526,13 @@ contract TIESRegistry is AccessControl {
         if (p.gamma == 0 || p.gamma > WAD) revert InvalidParams("gamma");
         if (p.mu > WAD) revert InvalidParams("mu");
         if (p.eta == 0 || p.eta > WAD) revert InvalidParams("eta");
-        if (p.zByRound.length < p.kMax) revert InvalidParams("zByRound");
+        if (p.zByRound.length < p.kMax || p.zByRound.length > MAX_PARAM_POINTS) {
+            revert InvalidParams("zByRound");
+        }
         uint256 n = p.curveTheta.length;
-        if (n < 2 || n != p.curveProb.length) revert InvalidParams("curve");
+        if (n < 2 || n > MAX_PARAM_POINTS || n != p.curveProb.length) {
+            revert InvalidParams("curve");
+        }
         for (uint256 i = 0; i < n; i++) {
             if (p.curveProb[i] > WAD) revert InvalidParams("curve");
             if (i > 0) {

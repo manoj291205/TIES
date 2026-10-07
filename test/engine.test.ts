@@ -631,21 +631,51 @@ describe("SettlementEngine", () => {
       }
     });
 
-    it("sends the bond to the vault when the challenger cannot receive ETH", async () => {
+    it("keeps a returned bond for withdrawal when the challenger burns the gas it is sent", async () => {
       const stack = await scenario();
       const { engine, eventId, vault, admin } = stack;
       await playRound(stack, eventId, HONEST);
-      // A contract without a receive function (the batcher has one, the book does not) challenges.
+      const greedy = await (
+        await ethers.getContractFactory("GreedyChallenger")
+      ).deploy(await engine.getAddress());
+      const greedyAddress = await greedy.getAddress();
+      await greedy.challenge(eventId, { value: eth("0.05") });
+      const vaultBefore = await ethers.provider.getBalance(await vault.getAddress());
+      // The resolution still goes through; the bond is kept for the challenger.
+      await expect(engine.connect(admin).resolveDispute(eventId, milli(300)))
+        .to.emit(engine, "BondOwed")
+        .withArgs(greedyAddress, eth("0.05"));
+      expect((await engine.eventState(eventId)).status).to.equal(Status.FINAL);
+      expect(await engine.bondOwed(greedyAddress)).to.equal(eth("0.05"));
+      expect(await ethers.provider.getBalance(await vault.getAddress())).to.equal(vaultBefore);
+      await expect(engine.connect(admin).withdrawBond()).to.be.revertedWithCustomError(
+        engine,
+        "NothingOwed",
+      );
+      await greedy.setGreedy(false);
+      await greedy.withdrawBond();
+      expect(await engine.bondOwed(greedyAddress)).to.equal(0n);
+      expect(await ethers.provider.getBalance(greedyAddress)).to.equal(eth("0.05"));
+      expect(await ethers.provider.getBalance(await engine.getAddress())).to.equal(0n);
+    });
+
+    it("fails a bond withdrawal the challenger cannot receive, keeping it owed", async () => {
+      const stack = await scenario();
+      const { engine, eventId, admin } = stack;
+      await playRound(stack, eventId, HONEST);
+      // A contract without a receive function (the book) challenges.
       const book = await stack.book.getAddress();
       await ethers.provider.send("hardhat_impersonateAccount", [book]);
       await ethers.provider.send("hardhat_setBalance", [book, "0x56BC75E2D63100000"]);
       const signer = await ethers.getSigner(book);
       await engine.connect(signer).challenge(eventId, { value: eth("0.05") });
-      const vaultBefore = await ethers.provider.getBalance(await vault.getAddress());
       await engine.connect(admin).resolveDispute(eventId, milli(300));
-      expect((await ethers.provider.getBalance(await vault.getAddress())) - vaultBefore).to.equal(
-        eth("0.05"),
+      expect(await engine.bondOwed(book)).to.equal(eth("0.05"));
+      await expect(engine.connect(signer).withdrawBond()).to.be.revertedWithCustomError(
+        engine,
+        "BondTransferFailed",
       );
+      expect(await engine.bondOwed(book)).to.equal(eth("0.05"));
     });
 
     it("rejects challenges and defaults in the wrong state or time", async () => {

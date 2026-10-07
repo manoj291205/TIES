@@ -152,9 +152,9 @@ abstract contract BaselineBase is AccessControl {
         uint256 amount = claimable[msg.sender];
         if (amount == 0) revert NothingToClaim();
         claimable[msg.sender] = 0;
+        emit Claimed(msg.sender, amount);
         (bool ok, ) = msg.sender.call{value: amount}("");
         if (!ok) revert TransferFailed();
-        emit Claimed(msg.sender, amount);
     }
 
     /// @notice Number of policies on an event.
