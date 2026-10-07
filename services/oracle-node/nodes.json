@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    { "id": "n1", "account": 10, "category": 0, "sourceId": 1, "primary": true, "mode": "honest" },
+    { "id": "n2", "account": 11, "category": 0, "sourceId": 2, "primary": true, "mode": "honest" },
+    { "id": "n3", "account": 12, "category": 0, "sourceId": 3, "primary": true, "mode": "honest" },
+    { "id": "n4", "account": 13, "category": 0, "sourceId": 4, "primary": false, "mode": "honest" },
+    { "id": "n5", "account": 14, "category": 0, "sourceId": 5, "primary": false, "mode": "honest" },
+    { "id": "n6", "account": 15, "category": 0, "sourceId": 6, "primary": false, "mode": "honest" },
+    { "id": "n7", "account": 16, "category": 0, "sourceId": 2, "primary": false, "mode": "honest" },
+    { "id": "n8", "account": 17, "category": 1, "sourceId": 7, "primary": true, "mode": "honest" },
+    { "id": "n9", "account": 10, "category": 1, "sourceId": 8, "primary": true, "mode": "honest" },
+    { "id": "n10", "account": 11, "category": 1, "sourceId": 9, "primary": true, "mode": "honest" }
+  ]
+}

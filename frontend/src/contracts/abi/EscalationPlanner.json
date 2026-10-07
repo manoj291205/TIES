@@ -1,0 +1,158 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract TIESRegistry",
+        "name": "registry_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract PolicyBook",
+        "name": "book_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_BUCKET_SCAN",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "book",
+    "outputs": [
+      {
+        "internalType": "contract PolicyBook",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "eventId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "category",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint32",
+            "name": "version",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint8",
+            "name": "round",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasConsensus",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "insufficient",
+            "type": "bool"
+          },
+          {
+            "internalType": "int256",
+            "name": "payCursor",
+            "type": "int256"
+          },
+          {
+            "internalType": "int256",
+            "name": "noPayCursor",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "consensus",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sigma",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nEff",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32[]",
+            "name": "sourceIds",
+            "type": "uint32[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "sourceWeights",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "reporters",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct EscalationPlanner.PlanInput",
+        "name": "in_",
+        "type": "tuple"
+      }
+    ],
+    "name": "plan",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "escalate",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "k",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address[]",
+        "name": "selected",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract TIESRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

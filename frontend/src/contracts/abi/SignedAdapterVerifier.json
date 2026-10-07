@@ -1,0 +1,257 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract TIESRegistry",
+        "name": "registry_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "ts",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nowTs",
+        "type": "uint256"
+      }
+    ],
+    "name": "FutureReport",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "sourceId",
+        "type": "uint32"
+      }
+    ],
+    "name": "SourceInactive",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "sourceId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "expected",
+        "type": "uint8"
+      }
+    ],
+    "name": "SourceWrongCategory",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "ts",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "earliest",
+        "type": "uint256"
+      }
+    ],
+    "name": "StaleReport",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "sourceId",
+        "type": "uint32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "toolHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ToolNotAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "UnknownSigner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_REPORT_AGE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "engine",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "eventId",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ts",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "toolHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "argsHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "responseHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sourceSig",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IOriginVerifier.SourceReport",
+        "name": "r",
+        "type": "tuple"
+      }
+    ],
+    "name": "digest",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract TIESRegistry",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "eventId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "category",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "observationEnd",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ts",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "toolHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "argsHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "responseHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sourceSig",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IOriginVerifier.SourceReport",
+        "name": "r",
+        "type": "tuple"
+      }
+    ],
+    "name": "verify",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "sourceId",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

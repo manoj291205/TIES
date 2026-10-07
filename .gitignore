@@ -20,3 +20,5 @@ coverage.json
 dist/
 experiments/results/raw/
 *.log
+
+frontend/src/contracts/deployments/31337.json

@@ -22,8 +22,15 @@ npm run lint
 npm -w frontend run build
 ```
 
-The one-command local stack (`npm run dev:stack`) and the web app (`npm run dev:web`) arrive in
-Milestones 4 and 5. Details are in [docs/RUNNING.md](docs/RUNNING.md).
+Run the local stack, and a scenario from a second terminal:
+
+```bash
+npm run dev:stack
+npm run demo:cli -- --scenario compromised-feed
+```
+
+The web app (`npm run dev:web`) arrives in Milestone 5. Details are in
+[docs/RUNNING.md](docs/RUNNING.md).
 
 ## Repository layout
 

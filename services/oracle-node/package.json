@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo \"oracle-node: implemented in M4\""
+    "start": "node -r ts-node/register/transpile-only src/main.ts",
+    "build": "echo \"oracle-node: type-checked by the root typecheck script\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1"
   }
 }

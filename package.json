@@ -19,8 +19,21 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "hardhat test && npm run test --workspaces --if-present",
-    "build": "hardhat compile && npm run build --workspaces --if-present",
-    "coverage": "hardhat coverage"
+    "build": "hardhat compile && npm run typecheck && npm run build --workspaces --if-present",
+    "coverage": "hardhat coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.services.json",
+    "node:local": "hardhat node",
+    "deploy:local": "node -r ts-node/register/transpile-only scripts/deploy.ts",
+    "seed:local": "node -r ts-node/register/transpile-only scripts/seed.ts",
+    "export-abi": "node -r ts-node/register/transpile-only scripts/export-abi.ts",
+    "stack:init": "node -r ts-node/register/transpile-only scripts/deploy-and-seed.ts",
+    "stack:sources": "node -r ts-node/register/transpile-only services/sources/src/main.ts",
+    "stack:oracles": "node -r ts-node/register/transpile-only services/oracle-node/src/main.ts",
+    "stack:keeper": "node -r ts-node/register/transpile-only services/keeper/src/main.ts",
+    "stack:demo-server": "node -r ts-node/register/transpile-only services/demo-server/src/main.ts",
+    "dev:stack": "hardhat compile && concurrently --kill-others-on-fail -n node,init,sources,oracles,keeper,demo -c gray,yellow,cyan,magenta,green,blue \"npm run node:local\" \"npm run stack:init\" \"npm run stack:sources\" \"npm run stack:oracles\" \"npm run stack:keeper\" \"npm run stack:demo-server\"",
+    "demo:cli": "node -r ts-node/register/transpile-only scripts/demo-cli.ts",
+    "dev:web": "npm -w frontend run dev"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

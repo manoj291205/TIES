@@ -6,7 +6,7 @@
 - [x] M1 Core contracts: index, vault, registry, policy book (`m1-core-contracts`)
 - [x] M2 Evidence, settlement, disputes (`m2-settlement`)
 - [x] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
-- [ ] M4 Off-chain services and one-command local stack (`m4-services`)
+- [x] M4 Off-chain services and one-command local stack (`m4-services`)
 - [ ] M5 Frontend foundation and design system (`m5-frontend-foundation`)
 - [ ] M6 Core user screens (`m6-core-screens`)
 - [ ] M7 Remaining role screens (`m7-role-screens`)
@@ -140,3 +140,58 @@ coverage 100%, line coverage 99.4%. Engine size 22.8 KB.
 
 Note for M4 keeper: `finalizeRound`, `applyDefault` and `resolveDispute` need at least
 `LEARNING_GAS_FLOOR` (6M) gas left when the event becomes final; use `estimateGas`.
+
+### M4
+
+Built:
+
+- `services/shared`: topology (sources, ports, accounts), key handling, deployment watcher, ABI
+  loading, report signing and hashing, error decoding, HTTP helpers.
+- `services/sources`: nine signed source servers (ports 7101-7109). Each has an MCP endpoint
+  (`/mcp`, Streamable HTTP, tools `get_flight_delay` and `get_rainfall_24h`), `/control`,
+  `/truth` and `/health`. S7 calls the real Open-Meteo archive (forecast fallback).
+- `services/oracle-node`: ten nodes on keys #10-#17 (MCP client, commit, reveal; modes honest,
+  tamper, silent, late), `GET /status`, `POST /nodes/:id/mode|start|stop`.
+- `services/keeper`: opens rounds, finalizes rounds (gas from `estimateGas`, which covers the 6M
+  learning floor), applies defaults.
+- `services/demo-server`: presenter REST and SSE API, scenario runner, transaction watcher.
+- `scripts/deploy.ts`, `seed.ts`, `export-abi.ts`, `demo-cli.ts`; `npm run dev:stack`.
+- `experiments/scenarios.ts`: twelve declarative scenarios shared with the demo server.
+- `test/services.test.ts`: starts the services against a separate Hardhat node and runs
+  `honest`, `compromised-feed` and `forged-report`.
+
+Run: `npm run dev:stack`, then `npm run demo:cli -- --scenario compromised-feed`.
+
+Tests: 135 contract and integration tests, 6 ties-math tests. All twelve scenarios were also run
+by hand against the live stack.
+
+Observed results (local chain, deterministic noise):
+
+- `compromised-feed`: round 1 INSUFFICIENT (N_eff 1.00, nothing moved), three rounds, final value
+  128.1 against a truth of 130, no wrong settlement.
+- `two-keys-one-feed`: round 1 INSUFFICIENT (N_eff 1.61), round 2 VALID after recruiting an
+  unrepresented source.
+- `forged-report`: the tampered reveal reverts with `UnknownSigner`; the event settles from the
+  others.
+- `borderline`: escalation judged futile, settled by default, two policies one minute from the
+  truth settled the wrong way. This is the honest limit of the interval, not a bug.
+- `real-weather`: Open-Meteo reported 38.5 mm for Chennai on 2025-10-22; settled in round 1.
+
+Decisions and deviations (planning notes D10 to D12):
+
+- A third rainfall source (S9) was added. With the default prior rho0 = 0.2, two distinct sources
+  give N_eff = 1.67, below N_min = 1.8, so a rainfall event with only S7 and S8 could never settle
+  without the admin.
+- `inconsistent-rounds` does not end in DISPUTED. The agreement kernel and the 4s outlier cut
+  discount late reports that disagree with round 1, and the dispersion term widens the new
+  interval, so the intervals keep overlapping and the running intersection holds. A disputed path
+  is shown by the extra `challenged-default` scenario.
+- Keys #10 and #11 serve two categories (flight and rain), because the spec has eight keys for
+  nine sources.
+- `SerialWallet` replaces the ethers `NonceManager`: a failed send (a reveal that reverts) made
+  the manager drift and later transactions failed.
+
+Known issues:
+
+- The seeded demo events stay open and are worked on by the keeper and nodes as scenarios advance
+  time; their windows can be skipped. Harmless on a demo chain.

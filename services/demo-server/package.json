@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo \"demo-server: implemented in M4\""
+    "start": "node -r ts-node/register/transpile-only src/main.ts",
+    "build": "echo \"demo-server: type-checked by the root typecheck script\""
   }
 }
