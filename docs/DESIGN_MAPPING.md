@@ -82,21 +82,24 @@ B1 to B11 and C1 to C3 settle the earlier conflicts (1-unit buckets, spec settle
 bonds, admin dispute resolution, fixed challenge bond, parameter snapshots, timestamp deadlines,
 account roles). The build follows them.
 
-## Items to confirm (ask)
+## Decisions on the remaining items
 
-1. **Quote breakdown.** The design shows `{pureRisk, margin, escalationFee}`. `quote` returns one
-   number. The UI can rebuild the split from the category parameters (`q(θ)`, margin, fee). Is
-   a rebuilt breakdown fine?
-2. **Per-source weight.** The design shows a "source weight" per origin. The contract does not
-   store weights. The UI would recompute them off-chain from reports and reputation using the
-   same maths as the contracts. Fine, or show per-report data only?
-3. **Verified-origin badge.** Only "Signed MCP" exists as a proof type. zkTLS and enclave are
-   interface-only for now. The badge will show "Signed MCP" for every verified report.
-4. **Rain sources.** Rainfall has three sources (S7, S8, S9), not two (assumption D10), because
-   two distinct sources can never reach the minimum N_eff of 1.8 with the default prior. The UI
-   lists whatever the registry holds.
-5. **Disputes from inconsistent rounds.** In practice a dispute arises from a challenge or from
-   evidence that never reaches the minimum, not from non-overlapping intervals (assumption D11).
-   The disputes queue and copy are written for all three reasons.
-6. **Presenter-only data.** Block "≈ minutes" hints on localhost are shown only when blocks are
+1. **Quote breakdown.** The UI rebuilds pure risk (`payout × q(θ)`), margin and escalation fee
+   from the event's parameter version, with the same rounding as the contract. The total shown is
+   always the on-chain `quote` value (that is what `bind` charges); the split is labelled
+   "computed from category parameters". If the rebuilt parts ever disagree with `quote` by more
+   than 1 wei, the UI shows only the total.
+2. **Per-source weight.** The UI recomputes per-report weights with `packages/ties-math`
+   (`aggregate`, the same integer maths the contract uses) from `ReportRevealed` values and
+   each oracle's reputation. It checks its V and N_eff against the latest `RoundFinalized`;
+   when they match the weights are shown and labelled "computed off-chain", otherwise the weight
+   column is hidden.
+3. **Verified-origin badge.** Every report accepted on chain shows "Verified origin · Signed MCP"
+   (the only verifier deployed). zkTLS and enclave are not shown anywhere in the UI.
+4. **Rain sources and disputes.** D10 (three rain sources, S7 to S9) and D11 (the
+   `inconsistent-rounds` scenario shows the intersection holding) are accepted. The disputes
+   queue handles all three reasons the contract can emit: `INCONSISTENT_EVIDENCE` (empty
+   intersection, still enforced by the contract and covered by the contract tests),
+   `CHALLENGED` and `INSUFFICIENT_EVIDENCE`.
+5. **Presenter-only data.** Block "≈ minutes" hints on localhost are shown only when blocks are
    being produced (an idle local chain has no blocks).
