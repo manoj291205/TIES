@@ -33,6 +33,7 @@ library Aggregation {
         uint256 nEff; // effective independent sources (WAD)
         uint256 sigma; // sigma_V (milli-units)
         uint256 weightSum; // sum of w_i (WAD)
+        uint256[] weights; // w_i per report (WAD)
     }
 
     /// @notice There are no reports to aggregate.
@@ -55,6 +56,7 @@ library Aggregation {
             w[i] = _weight(in_, i, r.median);
             r.weightSum += w[i];
         }
+        r.weights = w;
         if (r.weightSum == 0) return r;
 
         uint256 num;

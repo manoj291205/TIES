@@ -5,7 +5,7 @@
 - [x] M0 Repo bootstrap and hygiene (`m0-bootstrap`)
 - [x] M1 Core contracts: index, vault, registry, policy book (`m1-core-contracts`)
 - [x] M2 Evidence, settlement, disputes (`m2-settlement`)
-- [ ] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
+- [x] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
 - [ ] M4 Off-chain services and one-command local stack (`m4-services`)
 - [ ] M5 Frontend foundation and design system (`m5-frontend-foundation`)
 - [ ] M6 Core user screens (`m6-core-screens`)
@@ -86,3 +86,35 @@ Decisions and notes:
   library to stay under 24.6 KB.
 - Open item for the M3 review: a default after rounds that never reached N_min settles at the
   last consensus (D2).
+
+### M3
+
+Built:
+
+- `EscalationPlanner` (read-only): recruit count from the margin to the most valuable held bucket,
+  futility rule, candidates on unrepresented sources ranked by N_eff gain times reputation, ties
+  broken by `keccak256(prevrandao, eventId, oracle)`.
+- `LearningModule`: reputation and source-dependence update when an event becomes final, plus the
+  penalty for committee members that never revealed.
+- Engine: escalation (`EscalationRequested`, next round opens with the selected committee),
+  learning on `FINAL` (also after a default or a resolved dispute).
+- Registry views for the planner: `activeOracleInfo`, `dependenceVector`, `dependenceMatrix`.
+- `ties-math`: `planEscalation`, `updateReputation`, `silentPenalty`, `flipShare`,
+  `updateDependence`, and per-report weights in the aggregation result.
+
+Tests: 119 passing, 1 pending. Function coverage 100%, line coverage 99.4%. Scripted worked
+example, duplicate-source escalation, futility, no candidates, compromised source, dependence
+learning, silent penalty, randomised checks (k never above k_round, rounds never above K_max,
+recruits never on a represented source). `finalizeRound` gas is identical at 10 and 1,000
+policies (546,861).
+
+Interpretation calls to review (see `.claude/OPEN_QUESTIONS.md`, D2 and D4-D6):
+
+- D2: a default after rounds that never reached N_min settles at the last consensus.
+- D4: for held ranges wider than 64 buckets the planner scans the 64 buckets around the
+  consensus for the most valuable one (a literal "bucket nearest V" would make almost every
+  escalation futile and contradicts the worked example).
+- D5: `k` is raised to 1 when the formula gives 0.
+- D6: silent committee members lose only beta, once per event.
+
+The engine is 22.3 KB (limit 24.6 KB). Planner and learning are separate contracts.

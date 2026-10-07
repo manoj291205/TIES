@@ -18,14 +18,29 @@ export interface SignedReport {
 /** Milli-units from a plain number of minutes or millimetres. */
 export const milli = (units: number | bigint): bigint => BigInt(units) * 1000n;
 
+export interface OracleSpec {
+  /** 1-based source id the oracle is bound to in the registry. */
+  source: number;
+  primary: boolean;
+}
+
+/** Eight oracle keys, all on the round-1 committee; oracles 6 and 7 share source 2. */
+export const DEFAULT_ORACLES: OracleSpec[] = [1, 2, 3, 4, 5, 6, 2, 2].map((source) => ({
+  source,
+  primary: true,
+}));
+
 /**
- * Deploys the whole stack (vault, registry, policy book, verifier, engine) with eight oracle keys:
- * oracle i is registered on flight source i+1 for i < 6, and oracles 6 and 7 share source 2
- * (the "two keys, one feed" case). All eight sit on the round-1 committee.
+ * Deploys the whole stack (vault, registry, policy book, verifier, planner, learning module and
+ * engine). Oracle i uses signer `rest[i]`; `oracles` says which source each is bound to and whether
+ * it sits on the round-1 committee ("two keys, one feed" is oracles 1, 6 and 7 by default).
  */
 export async function deployEngine(
   overrides: Partial<CategoryParams> = {},
-  engineName: "SettlementEngine" | "SettlementEngineHarness" = "SettlementEngineHarness",
+  options: {
+    oracles?: OracleSpec[];
+    engineName?: "SettlementEngine" | "SettlementEngineHarness";
+  } = {},
 ) {
   const core = await deployCore(overrides);
   const { admin, vault, registry, book, rest } = core;
@@ -33,27 +48,42 @@ export async function deployEngine(
   const verifier = await (
     await ethers.getContractFactory("SignedAdapterVerifier")
   ).deploy(await registry.getAddress());
+  const planner = await (
+    await ethers.getContractFactory("EscalationPlanner")
+  ).deploy(await registry.getAddress(), await book.getAddress());
+  const learning = await (
+    await ethers.getContractFactory("LearningModule")
+  ).deploy(await registry.getAddress(), await book.getAddress(), admin.address);
   const engine = await (
-    await ethers.getContractFactory(engineName)
+    await ethers.getContractFactory(options.engineName ?? "SettlementEngineHarness")
   ).deploy(
     await vault.getAddress(),
     await book.getAddress(),
     await registry.getAddress(),
     await verifier.getAddress(),
+    await planner.getAddress(),
+    await learning.getAddress(),
     admin.address,
   );
   const engineAddress = await engine.getAddress();
   await vault.grantRole(await vault.ENGINE_ROLE(), engineAddress);
-  await registry.grantRole(await registry.ENGINE_ROLE(), engineAddress);
+  await registry.grantRole(await registry.ENGINE_ROLE(), await learning.getAddress());
+  await learning.setEngine(engineAddress);
   await book.setEngine(engineAddress);
 
-  const oracles = rest.slice(0, 8);
-  const oracleSource = [1, 2, 3, 4, 5, 6, 2, 2];
-  for (let i = 0; i < oracles.length; i++) {
-    await registry.registerOracle(oracles[i].address, FLIGHT_DELAY, oracleSource[i], true);
+  const specs = options.oracles ?? DEFAULT_ORACLES;
+  const oracles = rest.slice(0, specs.length);
+  for (let i = 0; i < specs.length; i++) {
+    await registry.registerOracle(
+      oracles[i].address,
+      FLIGHT_DELAY,
+      specs[i].source,
+      specs[i].primary,
+    );
   }
+  const oracleSource = specs.map((spec) => spec.source);
 
-  return { ...core, verifier, engine, engineAddress, oracles, oracleSource };
+  return { ...core, verifier, planner, learning, engine, engineAddress, oracles, oracleSource };
 }
 
 export type Stack = Awaited<ReturnType<typeof deployEngine>>;
@@ -177,4 +207,89 @@ export function parseLog(
     }
   }
   throw new Error(`event ${name} not found`);
+}
+
+export interface ResponderContext {
+  round: number;
+  oracleIndex: number;
+  /** 1-based source id the oracle is bound to. */
+  source: number;
+}
+
+/** Returns the value (milli-units) an oracle reports, or null if it stays silent. */
+export type Responder = (ctx: ResponderContext) => bigint | null;
+
+/** Plays the current round with the committee that was actually selected; returns the receipt. */
+export async function playCurrentRound(
+  stack: Stack,
+  eventId: bigint | number,
+  responder: Responder,
+) {
+  const { engine, oracles, oracleSource, sourceWallets } = stack;
+  const st = await engine.eventState(eventId);
+  const round = Number(st.round);
+  const committee = await engine.committeeOf(eventId, round);
+  const signed: { r: SignedReport; oracle: Signer }[] = [];
+  for (const member of committee) {
+    const oracleIndex = oracles.findIndex((o) => o.address === member);
+    const source = oracleSource[oracleIndex];
+    const value = responder({ round, oracleIndex, source });
+    if (value === null) continue;
+    const r = await signReport(stack, sourceWallets[source - 1], eventId, value);
+    const oracle = oracles[oracleIndex];
+    await engine.connect(oracle).commit(eventId, round, commitHash(r, SALT, oracle.address));
+    signed.push({ r, oracle });
+  }
+  await time.increaseTo(Number(st.commitDeadline));
+  for (const { r, oracle } of signed) {
+    await engine
+      .connect(oracle)
+      .reveal(
+        eventId,
+        round,
+        r.value,
+        r.ts,
+        r.toolHash,
+        r.argsHash,
+        r.responseHash,
+        r.sourceSig,
+        SALT,
+      );
+  }
+  await time.increaseTo(Number(st.revealDeadline));
+  return (await engine.finalizeRound(eventId)).wait();
+}
+
+/** Keeps playing rounds until the event leaves the commit/reveal states. */
+export async function playUntilSettled(
+  stack: Stack,
+  eventId: bigint | number,
+  responder: Responder,
+  maxRounds = 6,
+) {
+  const receipts = [];
+  for (let i = 0; i < maxRounds; i++) {
+    const status = Number((await stack.engine.eventState(eventId)).status);
+    if (status !== 1 && status !== 2) break;
+    receipts.push(await playCurrentRound(stack, eventId, responder));
+  }
+  return receipts;
+}
+
+/** All logs with the given name from the engine in a receipt. */
+export function findLogs(
+  stack: Pick<Stack, "engine">,
+  receipt: { logs: readonly { topics: readonly string[]; data: string }[] } | null,
+  name: string,
+) {
+  const out = [];
+  for (const log of receipt?.logs ?? []) {
+    try {
+      const parsed = stack.engine.interface.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed?.name === name) out.push(parsed);
+    } catch {
+      // not an engine event
+    }
+  }
+  return out;
 }

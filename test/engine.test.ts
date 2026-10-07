@@ -28,6 +28,12 @@ import {
 const Status = { NONE: 0, COMMIT: 1, REVEAL: 2, DEFAULT_PENDING: 3, DISPUTED: 4, FINAL: 5 };
 const Outcome = { INSUFFICIENT: 0, VALID: 1, DISPUTED: 2 };
 
+/**
+ * No oracle can ever be recruited (reputation threshold above any reputation), so these tests
+ * exercise the default, challenge and dispute paths on their own.
+ */
+const NO_RECRUIT = { rMin: 2n * WAD };
+
 /** Three independent flight sources agreeing around 130 min. */
 const HONEST = [
   { oracle: 0, source: 0, value: milli(128) },
@@ -37,7 +43,7 @@ const HONEST = [
 
 describe("SettlementEngine", () => {
   async function scenario() {
-    const stack = await deployEngine();
+    const stack = await deployEngine(NO_RECRUIT);
     await stack.vault.connect(stack.lp1).deposit({ value: eth("100") });
     const eventId = await createFlightEvent(stack.book);
     const policies = [
@@ -414,7 +420,7 @@ describe("SettlementEngine", () => {
 
   describe("round lifecycle", () => {
     it("opens rounds only after the observation window, once", async () => {
-      const stack = await deployEngine();
+      const stack = await deployEngine(NO_RECRUIT);
       await stack.vault.connect(stack.lp1).deposit({ value: eth("10") });
       const eventId = await createFlightEvent(stack.book);
       await expect(stack.engine.openRound(eventId)).to.be.revertedWithCustomError(
@@ -435,7 +441,7 @@ describe("SettlementEngine", () => {
     });
 
     it("needs a primary oracle to open a round", async () => {
-      const stack = await deployEngine();
+      const stack = await deployEngine(NO_RECRUIT);
       const now = await time.latest();
       await stack.book.createEvent(
         RAIN_24H,
@@ -460,7 +466,7 @@ describe("SettlementEngine", () => {
     });
 
     it("finalizes a fully settled event and reports no held collateral", async () => {
-      const stack = await deployEngine();
+      const stack = await deployEngine(NO_RECRUIT);
       await stack.vault.connect(stack.lp1).deposit({ value: eth("100") });
       const eventId = await createFlightEvent(stack.book);
       await bindPolicy(stack, stack.alice, eventId, 20, eth("1"));
@@ -669,7 +675,7 @@ describe("SettlementEngine", () => {
 
   describe("range settlement equals brute force (P3)", () => {
     it("settles the same money as evaluating every policy", async () => {
-      const stack = await deployEngine();
+      const stack = await deployEngine(NO_RECRUIT);
       const { engine, vault, book, alice, bob } = stack;
       await vault.connect(stack.lp1).deposit({ value: eth("200") });
       const eventId = await createFlightEvent(book, 5000, 6000);
@@ -712,7 +718,7 @@ describe("SettlementEngine", () => {
   describe("settlement cost does not grow with the number of policies (P4)", () => {
     it("finalizes 10 and 1000 policies for the same gas", async function () {
       this.timeout(900_000);
-      const stack = await deployEngine();
+      const stack = await deployEngine(NO_RECRUIT);
       const { book, vault, engine } = stack;
       await vault.connect(stack.lp1).deposit({ value: eth("400") });
       const batcher = await (await ethers.getContractFactory("BindBatcher")).deploy();
@@ -726,7 +732,7 @@ describe("SettlementEngine", () => {
 
       async function fill(eventId: bigint, count: number) {
         // A few anchor policies on both sides of the interval, the rest spread over the axis.
-        const buckets = [20, 40, 220, 300];
+        const buckets = [20, 40, 130, 220, 300];
         while (buckets.length < count) buckets.push(rnd(721));
         const chunk = 40;
         for (let i = 0; i < count; i += chunk) {

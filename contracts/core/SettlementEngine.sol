@@ -7,6 +7,8 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Aggregation} from "../libraries/Aggregation.sol";
 import {ISettlementEngine} from "../interfaces/ISettlementEngine.sol";
 import {IOriginVerifier} from "../verifiers/IOriginVerifier.sol";
+import {EscalationPlanner} from "./EscalationPlanner.sol";
+import {LearningModule} from "./LearningModule.sol";
 import {PolicyBook} from "./PolicyBook.sol";
 import {TIESRegistry} from "./TIESRegistry.sol";
 import {Vault} from "./Vault.sol";
@@ -53,6 +55,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         DisputeReason disputeReason;
         bool hasInterval;
         uint32 bucketCount;
+        uint8 category;
+        uint32 version;
         uint64 commitDeadline;
         uint64 revealDeadline;
         uint64 challengeDeadline;
@@ -97,6 +101,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     PolicyBook public immutable book;
     TIESRegistry public immutable registry;
     IOriginVerifier public immutable verifier;
+    EscalationPlanner public immutable planner;
+    LearningModule public immutable learning;
 
     mapping(uint256 => EventState) internal _state;
     mapping(uint256 => Report[]) private _reports;
@@ -141,6 +147,15 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     );
     /// @notice The event moved to a new lifecycle status.
     event EventStatusChanged(uint256 indexed eventId, Status status);
+    /// @notice More evidence is requested: a new round opens with oracles on sources that are not
+    ///         yet represented.
+    event EscalationRequested(
+        uint256 indexed eventId,
+        uint8 nextRound,
+        uint256 k,
+        address[] selected,
+        uint256 held
+    );
     /// @notice Held collateral remains and no further round is possible; a challenge window opened.
     event EventDefaultPending(uint256 indexed eventId, uint64 challengeDeadline);
     /// @notice A pending default was challenged with a bond.
@@ -179,18 +194,24 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     /// @param book_ The policy book.
     /// @param registry_ The registry.
     /// @param verifier_ The origin verifier.
+    /// @param planner_ The escalation planner.
+    /// @param learning_ The learning module.
     /// @param admin Account receiving the admin role (dispute resolution).
     constructor(
         Vault vault_,
         PolicyBook book_,
         TIESRegistry registry_,
         IOriginVerifier verifier_,
+        EscalationPlanner planner_,
+        LearningModule learning_,
         address admin
     ) {
         vault = vault_;
         book = book_;
         registry = registry_;
         verifier = verifier_;
+        planner = planner_;
+        learning = learning_;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
@@ -214,6 +235,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
 
         st.bucketCount = p.bucketCount;
         st.bucketWidth = p.bucketWidth;
+        st.category = category;
+        st.version = version;
         _beginRound(eventId, st, 1, committee, p.commitWindow, p.revealWindow);
     }
 
@@ -315,9 +338,17 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         if (block.timestamp < st.revealDeadline) revert RevealWindowOpen(st.revealDeadline);
 
         (uint8 category, uint32 version, , uint256 locked) = book.eventMeta(eventId);
-        TIESRegistry.CategoryParams memory p = registry.getParams(category, version);
-        uint8 round = st.round;
+        _closeRound(eventId, st, category, locked, registry.getParams(category, version));
+    }
 
+    function _closeRound(
+        uint256 eventId,
+        EventState storage st,
+        uint8 category,
+        uint256 locked,
+        TIESRegistry.CategoryParams memory p
+    ) private {
+        uint8 round = st.round;
         Aggregation.Result memory r = _aggregate(eventId, category, p);
         RoundOutcome outcome = _applyEvidence(st, r, p, round);
 
@@ -336,7 +367,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         } else if (heldAmount == 0) {
             _finalizeEvent(eventId, st, st.vLast);
         } else {
-            _escalateOrDefault(eventId, st, p);
+            _escalateOrDefault(eventId, st, p, r, outcome == RoundOutcome.INSUFFICIENT, heldAmount);
         }
     }
 
@@ -657,21 +688,138 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         );
     }
 
-    /// @dev Escalation is added in a later milestone; until then any unresolved collateral goes
-    ///      straight to a pending default.
+    /// @dev Spec 3.7 steps 2-3. Escalates while rounds remain and either the evidence is
+    ///      insufficient or more than `uMin` is still held; otherwise (or when the planner finds
+    ///      the margin unreachable or no unrepresented source can be recruited) opens the
+    ///      challenge window before the default rule applies.
     function _escalateOrDefault(
         uint256 eventId,
         EventState storage st,
-        TIESRegistry.CategoryParams memory p
+        TIESRegistry.CategoryParams memory p,
+        Aggregation.Result memory r,
+        bool insufficient,
+        uint256 heldAmount
     ) private {
+        if (st.round < p.kMax && (insufficient || heldAmount > p.uMin)) {
+            (bool escalate, uint256 k, address[] memory selected) = planner.plan(
+                _planInput(eventId, st, r, insufficient)
+            );
+            if (escalate) {
+                emit EscalationRequested(eventId, st.round + 1, k, selected, heldAmount);
+                _beginRound(eventId, st, st.round + 1, selected, p.commitWindow, p.revealWindow);
+                return;
+            }
+        }
         st.challengeDeadline = uint64(block.timestamp) + p.challengePeriod;
         _setStatus(eventId, st, Status.DEFAULT_PENDING);
         emit EventDefaultPending(eventId, st.challengeDeadline);
     }
 
+    /// @dev Groups the reports by source and passes what the planner needs.
+    function _planInput(
+        uint256 eventId,
+        EventState storage st,
+        Aggregation.Result memory r,
+        bool insufficient
+    ) private view returns (EscalationPlanner.PlanInput memory in_) {
+        Report[] storage reports = _reports[eventId];
+        uint256 n = reports.length;
+        in_.eventId = eventId;
+        in_.category = st.category;
+        in_.version = st.version;
+        in_.round = st.round;
+        in_.hasConsensus = r.weightSum > 0;
+        in_.insufficient = insufficient;
+        in_.payCursor = int256(st.payCount) - 1;
+        in_.noPayCursor = int256(uint256(st.bucketCount)) - int256(st.noPayCount);
+        in_.consensus = r.consensus;
+        in_.sigma = r.sigma;
+        in_.nEff = r.nEff;
+        in_.reporters = new address[](n);
+
+        uint32[] memory ids = new uint32[](n);
+        uint256[] memory weights = new uint256[](n);
+        uint256 distinct;
+        for (uint256 i = 0; i < n; i++) {
+            in_.reporters[i] = reports[i].oracle;
+            uint256 slot = distinct;
+            for (uint256 j = 0; j < distinct; j++) {
+                if (ids[j] == reports[i].sourceId) {
+                    slot = j;
+                    break;
+                }
+            }
+            if (slot == distinct) {
+                ids[distinct] = reports[i].sourceId;
+                distinct++;
+            }
+            weights[slot] += r.weights[i];
+        }
+        in_.sourceIds = new uint32[](distinct);
+        in_.sourceWeights = new uint256[](distinct);
+        for (uint256 j = 0; j < distinct; j++) {
+            in_.sourceIds[j] = ids[j];
+            in_.sourceWeights[j] = weights[j];
+        }
+    }
+
+    /// @dev Marks the event final and lets reputation and dependence learn from the outcome.
     function _finalizeEvent(uint256 eventId, EventState storage st, uint256 finalValue) private {
         _setStatus(eventId, st, Status.FINAL);
         emit EventFinalized(eventId, finalValue);
+        _learn(eventId, st, finalValue);
+    }
+
+    function _learn(uint256 eventId, EventState storage st, uint256 finalValue) private {
+        Report[] storage reports = _reports[eventId];
+        address[] memory silent = _silentMembers(eventId, st.round);
+        uint256 n = reports.length;
+        if (n == 0 && silent.length == 0) return;
+
+        LearningModule.LearnInput memory in_;
+        in_.eventId = eventId;
+        in_.category = st.category;
+        in_.version = st.version;
+        in_.finalValue = finalValue;
+        (, , , in_.total) = book.eventMeta(eventId);
+        in_.oracles = new address[](n);
+        in_.sources = new uint32[](n);
+        in_.values = new uint256[](n);
+        for (uint256 i = 0; i < n; i++) {
+            in_.oracles[i] = reports[i].oracle;
+            in_.sources[i] = reports[i].sourceId;
+            in_.values[i] = reports[i].value;
+        }
+        in_.silent = silent;
+        learning.learn(in_);
+    }
+
+    /// @dev Committee members, across all rounds, that never revealed (each listed once).
+    function _silentMembers(
+        uint256 eventId,
+        uint8 rounds
+    ) private view returns (address[] memory out) {
+        uint256 bound;
+        for (uint8 r = 1; r <= rounds; r++) bound += _committee[eventId][r].length;
+        address[] memory tmp = new address[](bound);
+        uint256 count;
+        for (uint8 r = 1; r <= rounds; r++) {
+            address[] storage members = _committee[eventId][r];
+            for (uint256 i = 0; i < members.length; i++) {
+                address who = members[i];
+                if (_reported[eventId][who]) continue;
+                bool seen;
+                for (uint256 j = 0; j < count; j++) {
+                    if (tmp[j] == who) {
+                        seen = true;
+                        break;
+                    }
+                }
+                if (!seen) tmp[count++] = who;
+            }
+        }
+        out = new address[](count);
+        for (uint256 i = 0; i < count; i++) out[i] = tmp[i];
     }
 
     function _max(int256 a, int256 b) private pure returns (int256) {

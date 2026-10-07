@@ -354,6 +354,71 @@ contract TIESRegistry is AccessControl {
         }
     }
 
+    /// @notice All active oracles of a category with their home source and reputation weight.
+    ///         Used to rank recruits in one call.
+    /// @param category Category id.
+    /// @return list Oracle addresses.
+    /// @return sourceIds Home source of each oracle.
+    /// @return weights Reputation weight alpha / (alpha + beta) of each oracle (WAD).
+    function activeOracleInfo(
+        uint8 category
+    )
+        external
+        view
+        returns (address[] memory list, uint32[] memory sourceIds, uint256[] memory weights)
+    {
+        address[] storage all = _oracleList[category];
+        uint256 count;
+        for (uint256 i = 0; i < all.length; i++) {
+            if (_oracles[all[i]][category].active) count++;
+        }
+        list = new address[](count);
+        sourceIds = new uint32[](count);
+        weights = new uint256[](count);
+        uint256 k;
+        for (uint256 i = 0; i < all.length; i++) {
+            Oracle storage o = _oracles[all[i]][category];
+            if (!o.active) continue;
+            list[k] = all[i];
+            sourceIds[k] = o.sourceId;
+            weights[k] = (o.alpha * WAD) / (o.alpha + o.beta);
+            k++;
+        }
+    }
+
+    /// @notice Dependence between `source` and each source in `others` (see `dependence`).
+    /// @param source The source compared against the others.
+    /// @param others Other sources.
+    /// @param fallbackRho Prior dependence for pairs never learned about.
+    /// @return rho Dependence per entry of `others` (WAD).
+    function dependenceVector(
+        uint32 source,
+        uint32[] calldata others,
+        uint256 fallbackRho
+    ) external view returns (uint256[] memory rho) {
+        rho = new uint256[](others.length);
+        for (uint256 i = 0; i < others.length; i++) {
+            rho[i] = _dependence(source, others[i], fallbackRho);
+        }
+    }
+
+    /// @notice Pairwise dependence matrix of a set of sources, row-major (n x n).
+    /// @param ids The sources.
+    /// @param fallbackRho Prior dependence for pairs never learned about.
+    /// @return rho Flat matrix; the diagonal is 1.0.
+    function dependenceMatrix(
+        uint32[] calldata ids,
+        uint256 fallbackRho
+    ) external view returns (uint256[] memory rho) {
+        uint256 n = ids.length;
+        rho = new uint256[](n * n);
+        for (uint256 i = 0; i < n; i++) {
+            for (uint256 j = 0; j < n; j++) {
+                rho[i * n + j] = _dependence(ids[i], ids[j], fallbackRho);
+            }
+        }
+    }
+
     /// @notice Reputation parameters of an oracle in a category.
     /// @param oracle Oracle address.
     /// @param category Category id.
@@ -409,9 +474,7 @@ contract TIESRegistry is AccessControl {
         uint32 b,
         uint256 fallbackRho
     ) external view returns (uint256 rho) {
-        if (a == b) return WAD;
-        rho = _rho[_pairKey(a, b)];
-        if (rho == 0) rho = fallbackRho;
+        return _dependence(a, b, fallbackRho);
     }
 
     /// @notice Store a learned dependence between two distinct sources.
@@ -425,6 +488,16 @@ contract TIESRegistry is AccessControl {
     }
 
     // -------------------------------------------------------------------- internals
+
+    function _dependence(
+        uint32 a,
+        uint32 b,
+        uint256 fallbackRho
+    ) private view returns (uint256 rho) {
+        if (a == b) return WAD;
+        rho = _rho[_pairKey(a, b)];
+        if (rho == 0) rho = fallbackRho;
+    }
 
     function _pairKey(uint32 a, uint32 b) private pure returns (bytes32) {
         return a < b ? bytes32((uint256(a) << 32) | b) : bytes32((uint256(b) << 32) | a);

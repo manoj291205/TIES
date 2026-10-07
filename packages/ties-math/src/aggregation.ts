@@ -17,6 +17,7 @@ export interface AggregationResult {
   nEff: bigint;
   sigma: bigint;
   weightSum: bigint;
+  weights: bigint[];
 }
 
 /** Lower weighted median: smallest value whose cumulative weight reaches half the total. */
@@ -57,7 +58,15 @@ export function aggregate(input: AggregationInput): AggregationResult {
     return mulDiv(input.rep[i], agreement, WAD);
   });
   const weightSum = w.reduce((a, b) => a + b, 0n);
-  const empty = { median, consensus: 0n, dispersion: 0n, nEff: 0n, sigma: 0n, weightSum };
+  const empty = {
+    median,
+    consensus: 0n,
+    dispersion: 0n,
+    nEff: 0n,
+    sigma: 0n,
+    weightSum,
+    weights: w,
+  };
   if (weightSum === 0n) return empty;
 
   const consensus = w.reduce((acc, wi, i) => acc + wi * input.x[i], 0n) / weightSum;
@@ -77,7 +86,7 @@ export function aggregate(input: AggregationInput): AggregationResult {
   const nEff = mulDiv(weightSum * weightSum, WAD, den);
   const spread = isqrt(dispersion + input.sigmaFloor * input.sigmaFloor);
   const sigma = mulDiv(spread, WAD, sqrtWad(nEff));
-  return { median, consensus, dispersion, nEff, sigma, weightSum };
+  return { median, consensus, dispersion, nEff, sigma, weightSum, weights: w };
 }
 
 /** Round interval [V - z*sigma, V + z*sigma], clamped at 0. */
