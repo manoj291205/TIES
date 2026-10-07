@@ -219,6 +219,23 @@ contract PolicyBook is AccessControl, ReentrancyGuard {
         return _event(eventId);
     }
 
+    /// @notice Compact event data for the settlement engine (no strings).
+    /// @param eventId The event.
+    /// @return category Category id.
+    /// @return version Parameter version snapshotted at creation.
+    /// @return observationEnd Oracle rounds may open from this timestamp.
+    /// @return locked Total collateral locked on the event.
+    function eventMeta(
+        uint256 eventId
+    )
+        external
+        view
+        returns (uint8 category, uint32 version, uint64 observationEnd, uint256 locked)
+    {
+        EventData storage e = _event(eventId);
+        return (e.category, e.version, e.observationEnd, e.locked);
+    }
+
     /// @notice Read a policy.
     /// @param policyId The policy.
     /// @return The policy data.

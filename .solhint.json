@@ -6,6 +6,7 @@
     "no-empty-blocks": "off",
     "not-rely-on-time": "off",
     "reason-string": "off",
-    "immutable-vars-naming": "off"
+    "immutable-vars-naming": "off",
+    "var-name-mixedcase": "off"
   }
 }

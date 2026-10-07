@@ -335,6 +335,25 @@ contract TIESRegistry is AccessControl {
         return _oracleList[category][index];
     }
 
+    /// @notice Active oracles flagged primary for a category, in registration order. These form
+    ///         the round-1 committee.
+    /// @param category Category id.
+    /// @return list The primary oracles.
+    function activePrimaryOracles(uint8 category) external view returns (address[] memory list) {
+        address[] storage all = _oracleList[category];
+        uint256 count;
+        for (uint256 i = 0; i < all.length; i++) {
+            Oracle storage o = _oracles[all[i]][category];
+            if (o.active && o.primary) count++;
+        }
+        list = new address[](count);
+        uint256 k;
+        for (uint256 i = 0; i < all.length; i++) {
+            Oracle storage o = _oracles[all[i]][category];
+            if (o.active && o.primary) list[k++] = all[i];
+        }
+    }
+
     /// @notice Reputation parameters of an oracle in a category.
     /// @param oracle Oracle address.
     /// @param category Category id.

@@ -4,7 +4,7 @@
 
 - [x] M0 Repo bootstrap and hygiene (`m0-bootstrap`)
 - [x] M1 Core contracts: index, vault, registry, policy book (`m1-core-contracts`)
-- [ ] M2 Evidence, settlement, disputes (`m2-settlement`)
+- [x] M2 Evidence, settlement, disputes (`m2-settlement`)
 - [ ] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
 - [ ] M4 Off-chain services and one-command local stack (`m4-services`)
 - [ ] M5 Frontend foundation and design system (`m5-frontend-foundation`)
@@ -58,3 +58,31 @@ Run: `npm test`, `npx hardhat coverage`.
 
 Tests: 60 contract tests + 6 ties-math tests. Function coverage 100% (statements 99.5%).
 Contract sizes: PolicyBook 12.1 KB, TIESRegistry 12.1 KB, Vault 4.0 KB (limit 24.6 KB).
+
+### M2
+
+Built:
+
+- `SignedAdapterVerifier` (EIP-191 recovery, source lookup by signer, category, active flag, tool
+  hash allowlist, timestamp window) behind `IOriginVerifier`.
+- `Aggregation` library and its `ties-math` mirror (weighted median, agreement weights, consensus,
+  dispersion, N_eff, sigma).
+- `SettlementEngine`: open / commit / reveal / finalize, running intersection, range settlement,
+  `DEFAULT_PENDING`, `challenge`, `applyDefault`, `resolveDispute`, status events.
+- `ties-math`: aggregation, round interval, cursor and range-settlement reference, brute force.
+- Test-only mocks: aggregation harness, engine harness (opens a further round), bind batcher.
+
+Tests: 101 passing, 1 pending (the size check skips itself under coverage). Function coverage 100%
+on all contracts. Properties P1, P2, P3, P4, P5, P6 are covered (see `test/engine.test.ts`,
+`test/vault.test.ts`, `test/verifier.test.ts`). P4: 523,864 gas at 10 policies, 524,277 at 1,000.
+
+Decisions and notes:
+
+- `maxAge` has no value in the spec; a 1-day constant is used (question D1).
+- Cursors are clamped so default and dispute resolution can never reverse or double-settle a
+  bucket (D3).
+- Escalation is a stub that goes straight to `DEFAULT_PENDING`; M3 completes it.
+- The engine is 18.0 KB. Escalation and learning will be added in M3 and may need an external
+  library to stay under 24.6 KB.
+- Open item for the M3 review: a default after rounds that never reached N_min settles at the
+  last consensus (D2).
