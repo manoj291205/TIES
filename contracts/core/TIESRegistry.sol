@@ -354,8 +354,8 @@ contract TIESRegistry is AccessControl {
         }
     }
 
-    /// @notice All active oracles of a category with their home source and reputation weight.
-    ///         Used to rank recruits in one call.
+    /// @notice All active oracles of a category whose home source is also active, with that
+    ///         source and their reputation weight. Used to rank recruits in one call.
     /// @param category Category id.
     /// @return list Oracle addresses.
     /// @return sourceIds Home source of each oracle.
@@ -370,7 +370,8 @@ contract TIESRegistry is AccessControl {
         address[] storage all = _oracleList[category];
         uint256 count;
         for (uint256 i = 0; i < all.length; i++) {
-            if (_oracles[all[i]][category].active) count++;
+            Oracle storage c = _oracles[all[i]][category];
+            if (c.active && _sources[c.sourceId].active) count++;
         }
         list = new address[](count);
         sourceIds = new uint32[](count);
@@ -378,7 +379,7 @@ contract TIESRegistry is AccessControl {
         uint256 k;
         for (uint256 i = 0; i < all.length; i++) {
             Oracle storage o = _oracles[all[i]][category];
-            if (!o.active) continue;
+            if (!o.active || !_sources[o.sourceId].active) continue;
             list[k] = all[i];
             sourceIds[k] = o.sourceId;
             weights[k] = (o.alpha * WAD) / (o.alpha + o.beta);
@@ -518,7 +519,7 @@ contract TIESRegistry is AccessControl {
         if (p.s == 0) revert InvalidParams("s");
         if (p.delta == 0) revert InvalidParams("delta");
         if (p.nMin <= WAD) revert InvalidParams("nMin");
-        if (p.rho0 > WAD) revert InvalidParams("rho0");
+        if (p.rho0 == 0 || p.rho0 > WAD) revert InvalidParams("rho0");
         if (p.alpha0 == 0 || p.beta0 == 0) revert InvalidParams("initialReputation");
         if (p.gamma == 0 || p.gamma > WAD) revert InvalidParams("gamma");
         if (p.mu > WAD) revert InvalidParams("mu");

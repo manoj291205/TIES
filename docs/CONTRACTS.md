@@ -38,11 +38,18 @@ vault and the registry; the policy book holds `BOOK_ROLE` on the vault.
      most valuable held bucket, then ranks oracles on sources that are not yet represented by the
      gain in effective independent sources times their reputation. A new round opens with the
      selected oracles (`EscalationRequested`).
-   - Otherwise (futile margin, no candidate, round limit, or little held) the event goes to
-     `DEFAULT_PENDING`. After the challenge period `applyDefault` settles the rest at the last
-     consensus value. A bonded `challenge` instead moves the event to `DISPUTED`, resolved by the
+   - After an insufficient round the engine always tries to recruit for sufficiency; the
+     futility rule only ends escalation after a sufficient round.
+   - If no round ever produced a valid interval, the event goes to `DISPUTED`
+     (`INSUFFICIENT_EVIDENCE`) for the admin: collateral never moves on evidence from fewer than
+     N_min independent sources.
+   - Otherwise (futile margin, no candidate, no report capacity, round limit, or little held) the
+     event goes to `DEFAULT_PENDING`. After the challenge period `applyDefault` settles the rest at the last
+     consensus value clamped into [L, U]. A bonded `challenge` instead moves the event to `DISPUTED`, resolved by the
      admin with `resolveDispute`.
      When an event becomes `FINAL`, `LearningModule` updates reputation and source dependence.
+     The update runs in try/catch (`LearningSkipped` on failure) and needs `LEARNING_GAS_FLOOR`
+     (6,000,000) gas left, so callers should use `estimateGas`.
 5. `PolicyBook.claim(policyId)` pays a policy whose bucket is at or below the engine's pay cursor.
 
 Cursors are clamped so a settled bucket never reverses and the pay and no-pay ranges never overlap.
@@ -91,7 +98,7 @@ The cost depends on the number of reports (at most 16) and sources, not on polic
 
 | Contract                | Bytes  |
 | ----------------------- | ------ |
-| `SettlementEngine`      | 22,274 |
+| `SettlementEngine`      | 22,826 |
 | `TIESRegistry`          | 14,300 |
 | `PolicyBook`            | 12,257 |
 | `LearningModule`        | 7,002  |
@@ -99,7 +106,7 @@ The cost depends on the number of reports (at most 16) and sources, not on polic
 | `Vault`                 | 3,976  |
 | `SignedAdapterVerifier` | 2,381  |
 
-The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 2.3 KB of
+The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 1.7 KB of
 headroom, so escalation and learning live in separate contracts.
 
 ## Worked example (flight AI 101)
@@ -135,7 +142,7 @@ the tolerance with the same sign, and decays toward the prior otherwise.
 `OracleUpdated`, `ReputationUpdated`, `DependenceUpdated`, `EventCreated`, `PolicyBound`, `Claimed`,
 `EngineSet`, `Deposit`, `Withdraw`, `RoundOpened`, `ReportCommitted`, `ReportRevealed`,
 `RoundFinalized`, `EventStatusChanged`, `EventDefaultPending`, `EventChallenged`, `EventDisputed`,
-`EscalationRequested`, `DefaultApplied`, `DisputeResolved`, `EventFinalized`.
+`EscalationRequested`, `DefaultApplied`, `DisputeResolved`, `EventFinalized`, `LearningSkipped`.
 
 `RoundFinalized(eventId, round, status, V, sigma, nEff, L, U, payCursor, noPayCursor, newPay,
 newNoPay, held)`: `status` is 0 insufficient, 1 valid, 2 disputed. Before the first valid interval

@@ -78,8 +78,7 @@ export function valuableBucket(
       bucket = b;
     }
   }
-  if (best > 0n) return { any: true, bucket };
-  return { any: to - from + 1 > MAX_BUCKET_SCAN, bucket: nearest };
+  return { any: best > 0n, bucket };
 }
 
 /**
@@ -113,9 +112,10 @@ export function planEscalation(
       }
     }
   }
-  if (futile) {
+  if (futile && !input.insufficient) {
     return { escalate: false, k: 0, selected: [], kInsufficient, kMargin, futile, bucket };
   }
+  if (futile) kMargin = 0; // insufficient evidence: recruit for sufficiency regardless
 
   let k = Math.min(p.kRound, Math.max(kInsufficient, kMargin));
   if (k === 0) k = 1;

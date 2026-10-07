@@ -60,7 +60,13 @@ contract EscalationPlanner {
             ? _ceilWad(p.nMin - Math.min(in_.nEff, p.nMin))
             : 0;
         (uint256 kMargin, bool futile) = _margin(in_, p);
-        if (futile) return (false, 0, new address[](0));
+        if (futile) {
+            // An unreachable margin ends escalation only once the evidence is sufficient. With
+            // insufficient evidence the consensus itself is not yet trusted, so sources are still
+            // recruited to reach N_min.
+            if (!in_.insufficient) return (false, 0, new address[](0));
+            kMargin = 0;
+        }
 
         k = Math.min(p.kRound, Math.max(kInsufficient, kMargin));
         if (k == 0) k = 1;
@@ -90,8 +96,8 @@ contract EscalationPlanner {
     }
 
     /// @dev The held bucket with the most collateral. When the held range is wider than
-    ///      MAX_BUCKET_SCAN buckets, only the MAX_BUCKET_SCAN buckets around the consensus value are
-    ///      scanned; if none of them carries collateral the bucket nearest the consensus is used.
+    ///      MAX_BUCKET_SCAN buckets, only the MAX_BUCKET_SCAN buckets centred on the bucket nearest
+    ///      the consensus are scanned. A window without collateral imposes no margin.
     function _valuableBucket(
         PlanInput memory in_,
         TIESRegistry.CategoryParams memory p
@@ -120,8 +126,7 @@ contract EscalationPlanner {
                 bucket = start + i;
             }
         }
-        if (best > 0) return (true, bucket);
-        return (to - from + 1 > MAX_BUCKET_SCAN, nearest);
+        return (best > 0, bucket);
     }
 
     // ------------------------------------------------------------------ ranking

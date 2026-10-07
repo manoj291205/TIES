@@ -118,3 +118,25 @@ Interpretation calls to review (see `.claude/OPEN_QUESTIONS.md`, D2 and D4-D6):
 - D6: silent committee members lose only beta, once per event.
 
 The engine is 22.3 KB (limit 24.6 KB). Planner and learning are separate contracts.
+
+### M3 review (checkpoint)
+
+Reviewed the contracts against the spec and the settlement properties. The mechanism is intact.
+Changes made in the review:
+
+- An event whose rounds never reach N_min is disputed for the admin instead of defaulting, so no
+  collateral ever moves on evidence from fewer than N_min independent sources (P1 on every path).
+- After an insufficient round the engine always recruits for sufficiency; futility applies only to
+  sufficient rounds.
+- A scan window without collateral imposes no margin.
+- The default value is the last consensus clamped into [L, U].
+- The learning update can no longer block settlement (try/catch with a gas floor; `rho0 = 0` is
+  rejected).
+- Escalation respects the remaining report capacity; oracles on deactivated sources are not
+  recruited.
+
+New tests: `test/safety.test.ts` (11). Totals: 131 contract tests + 6 ties-math tests, function
+coverage 100%, line coverage 99.4%. Engine size 22.8 KB.
+
+Note for M4 keeper: `finalizeRound`, `applyDefault` and `resolveDispute` need at least
+`LEARNING_GAS_FLOOR` (6M) gas left when the event becomes final; use `estimateGas`.

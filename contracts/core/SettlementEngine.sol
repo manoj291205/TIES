@@ -24,6 +24,9 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     uint256 private constant WAD = 1e18;
     /// @notice Bond a challenger posts against a pending default.
     uint256 public constant CHALLENGE_BOND = 0.05 ether;
+    /// @notice Gas that must remain before the learning update runs, so a caller cannot make it
+    ///         fail on purpose by supplying too little gas.
+    uint256 public constant LEARNING_GAS_FLOOR = 6_000_000;
 
     /// @notice Lifecycle of an event after binding closes. Before the first round the event is
     ///         OPEN or CLOSED purely by time (status NONE here).
@@ -46,7 +49,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     /// @notice Why an event entered DISPUTED.
     enum DisputeReason {
         INCONSISTENT_EVIDENCE,
-        CHALLENGED
+        CHALLENGED,
+        INSUFFICIENT_EVIDENCE
     }
 
     struct EventState {
@@ -57,6 +61,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         uint32 bucketCount;
         uint8 category;
         uint32 version;
+        uint32 maxReports;
         uint64 commitDeadline;
         uint64 revealDeadline;
         uint64 challengeDeadline;
@@ -168,6 +173,8 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     event DisputeResolved(uint256 indexed eventId, uint256 finalValue);
     /// @notice All collateral of the event is settled.
     event EventFinalized(uint256 indexed eventId, uint256 finalValue);
+    /// @notice The learning update reverted; settlement went ahead without it.
+    event LearningSkipped(uint256 indexed eventId);
 
     error WrongStatus(uint256 eventId, Status status);
     error WrongRound(uint8 expected, uint8 given);
@@ -189,6 +196,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     error WrongBond(uint256 sent, uint256 required);
     error CursorRegression();
     error BondTransferFailed();
+    error InsufficientGasForLearning();
 
     /// @param vault_ The liquidity vault (this contract needs ENGINE_ROLE on it).
     /// @param book_ The policy book.
@@ -237,6 +245,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         st.bucketWidth = p.bucketWidth;
         st.category = category;
         st.version = version;
+        st.maxReports = p.maxReportsPerEvent;
         _beginRound(eventId, st, 1, committee, p.commitWindow, p.revealWindow);
     }
 
@@ -318,6 +327,7 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         );
         if (committed != expected) revert CommitMismatch();
         if (_reported[eventId][msg.sender]) revert AlreadyReported(msg.sender);
+        if (_reports[eventId].length >= st.maxReports) revert TooManyReports(st.maxReports);
 
         uint32 sourceId = _verify(eventId, report);
 
@@ -390,19 +400,20 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
     }
 
     /// @notice After the challenge period, settle the remaining collateral at the last consensus
-    ///         value. Anyone may call.
+    ///         value, clamped into the running interval [L, U]. Anyone may call.
     /// @param eventId The event.
     function applyDefault(uint256 eventId) external nonReentrant {
         EventState storage st = _state[eventId];
         if (st.status != Status.DEFAULT_PENDING) revert WrongStatus(eventId, st.status);
         if (block.timestamp < st.challengeDeadline)
             revert ChallengeWindowOpen(st.challengeDeadline);
-        _settleTo(eventId, st, st.vLast, st.vLast);
-        st.lowerBound = st.vLast;
-        st.upperBound = st.vLast;
-        st.hasInterval = true;
-        emit DefaultApplied(eventId, st.vLast);
-        _finalizeEvent(eventId, st, st.vLast);
+        // A pending default always has a valid interval; the value is kept inside it.
+        uint256 value = Math.min(Math.max(st.vLast, st.lowerBound), st.upperBound);
+        _settleTo(eventId, st, value, value);
+        st.lowerBound = value;
+        st.upperBound = value;
+        emit DefaultApplied(eventId, value);
+        _finalizeEvent(eventId, st, value);
     }
 
     /// @notice Resolve a disputed event at an admin-chosen final value. A challenger whose claim
@@ -542,7 +553,6 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         IOriginVerifier.SourceReport memory report
     ) private view returns (uint32) {
         (uint8 category, , uint64 observationEnd, ) = book.eventMeta(eventId);
-        if (_reports[eventId].length >= 16) revert TooManyReports(16);
         return verifier.verify(eventId, category, observationEnd, report);
     }
 
@@ -688,10 +698,11 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         );
     }
 
-    /// @dev Spec 3.7 steps 2-3. Escalates while rounds remain and either the evidence is
-    ///      insufficient or more than `uMin` is still held; otherwise (or when the planner finds
-    ///      the margin unreachable or no unrepresented source can be recruited) opens the
-    ///      challenge window before the default rule applies.
+    /// @dev Spec 3.7 steps 2-3. Escalates while rounds and report capacity remain and either the
+    ///      evidence is insufficient or more than `uMin` is still held. Otherwise, if a valid
+    ///      interval exists, opens the challenge window before the default rule applies. If no
+    ///      round ever produced a valid interval the event is disputed instead: collateral never
+    ///      moves on evidence from fewer than N_min independent sources.
     function _escalateOrDefault(
         uint256 eventId,
         EventState storage st,
@@ -700,15 +711,27 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         bool insufficient,
         uint256 heldAmount
     ) private {
-        if (st.round < p.kMax && (insufficient || heldAmount > p.uMin)) {
+        uint256 room = st.maxReports - _reports[eventId].length;
+        if (st.round < p.kMax && room > 0 && (insufficient || heldAmount > p.uMin)) {
             (bool escalate, uint256 k, address[] memory selected) = planner.plan(
                 _planInput(eventId, st, r, insufficient)
             );
             if (escalate) {
+                if (selected.length > room) {
+                    address[] memory fitting = new address[](room);
+                    for (uint256 i = 0; i < room; i++) fitting[i] = selected[i];
+                    selected = fitting;
+                }
                 emit EscalationRequested(eventId, st.round + 1, k, selected, heldAmount);
                 _beginRound(eventId, st, st.round + 1, selected, p.commitWindow, p.revealWindow);
                 return;
             }
+        }
+        if (!st.hasInterval) {
+            st.disputeReason = DisputeReason.INSUFFICIENT_EVIDENCE;
+            _setStatus(eventId, st, Status.DISPUTED);
+            emit EventDisputed(eventId, DisputeReason.INSUFFICIENT_EVIDENCE);
+            return;
         }
         st.challengeDeadline = uint64(block.timestamp) + p.challengePeriod;
         _setStatus(eventId, st, Status.DEFAULT_PENDING);
@@ -791,7 +814,10 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
             in_.values[i] = reports[i].value;
         }
         in_.silent = silent;
-        learning.learn(in_);
+        if (gasleft() < LEARNING_GAS_FLOOR) revert InsufficientGasForLearning();
+        try learning.learn(in_) {} catch {
+            emit LearningSkipped(eventId);
+        }
     }
 
     /// @dev Committee members, across all rounds, that never revealed (each listed once).
