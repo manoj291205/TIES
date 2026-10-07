@@ -1,4 +1,4 @@
-# Progress
+﻿# Progress
 
 ## Milestones
 
@@ -10,7 +10,7 @@
 - [x] M5 Frontend foundation and design system (`m5-frontend-foundation`)
 - [x] M6 Core user screens (`m6-core-screens`)
 - [x] M7 Remaining role screens (`m7-role-screens`)
-- [ ] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
+- [x] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
 - [ ] M9 Hardening, polish, documentation (`m9-hardening`)
 - [ ] M10 Sepolia deployment (gated) (`m10-sepolia`)
 
@@ -229,7 +229,7 @@ Built (all four screens read live contract data; no demo values):
 - Events marketplace: category, status and search filters kept in the URL, loading, empty and
   error states, cards with real capacity and cover bound, links to buy and to the explorer.
 - Settlement explorer: threshold chart coloured from the engine's settlement cursors, round
-  timeline from `RoundFinalized` (round interval = V ± z·sigma) with the running intersection,
+  timeline from `RoundFinalized` (round interval = V Â± zÂ·sigma) with the running intersection,
   sources grouped by origin with per-report weights recomputed off-chain with `ties-math` (shown
   only when they reproduce the on-chain V and N_eff), N_eff gauge, money split, escalation panel
   with countdowns and commit count, live ticker, and the insufficient, disputed and settled
@@ -283,3 +283,44 @@ Known issues:
 
 - Light theme and 1280 px layouts are checked in M9 polish.
 - The category parameter editor shows raw fixed-point numbers (for example 1.8 for N_min).
+
+### M8
+
+Built:
+
+- Baseline contracts in `contracts/baselines`: `BaselineSingle`, `BaselineAvg2` (the earlier
+  prototype's rule), `BaselineMedian3` (2-of-3 head count) and `BaselineMedian7` (static
+  seven-oracle quorum). Each has its own pool, binds policies like TIES and settles with a
+  per-policy `settleAll` loop. Six tests.
+- `experiments/run.ts`: plays every flight scenario against TIES and all four baselines with real
+  transactions (100 events x 20 policies per scenario by default), the gas-against-policies
+  measurement (10 to 1000 policies), and three sweeps (compromised sources, escalation trigger,
+  confidence level alpha). Writes `experiments/results/summary.json` and CSVs, and copies the
+  summary to `frontend/public/experiments/latest.json`. Raw per-event data goes to the ignored
+  `experiments/results/raw/`.
+- `experiments/charts.ts` renders four PNG figures to `docs/figures/`; `experiments/report.ts`
+  writes `docs/EXPERIMENTS.md` from the summary, so no number in it is typed by hand.
+- Demo server: `/fund`, `/sources`, `/nodes`, `/runs`, `POST /experiments/run` (streams progress).
+- Live demo lab screen (scenario run with streamed transactions, live chart, result checks,
+  comparison from `latest.json`, run experiments, run history) and presenter control panel
+  (reset, seed, fund, time presets, mine, source and node modes, demo script with the account to
+  use).
+
+Run: `npm run experiments`, `npm run experiments:charts`, `npm run experiments:report`.
+
+Results are in `docs/EXPERIMENTS.md`. Honest reading of them, for the numbers check:
+
+- Settling gas is flat for TIES and linear for the baselines, as designed.
+- Against noise-level errors TIES is not dramatically better than the baselines; its advantage
+  shows when a feed is compromised or a key is duplicated.
+- A share of policies near the truth is decided by the default rule, not by evidence; the
+  document reports that split and the error rate of each part.
+
+Deviations and assumptions:
+
+- `BaselineMedian7` asks seven oracle keys (six distinct sources plus a second key on S2), because
+  flight data has only six sources.
+- In the experiments a forged report moves the value by 90 minutes (the oracle node's own tamper
+  moves it by 5); baselines accept it, TIES rejects it.
+- The 1000-policy baseline settles under the block gas limit; the document gives a labelled
+  extrapolation for where the limit would be reached.

@@ -44,6 +44,7 @@ export type RunEvent =
     }
   | { type: "tx"; tx: TxRecord }
   | { type: "round"; round: RoundRow }
+  | { type: "event"; eventId: number; label: string; unit: string }
   | { type: "result"; result: ScenarioResult }
   | { type: "error"; message: string };
 
@@ -232,6 +233,7 @@ export class ScenarioRunner {
         "admin",
       );
       const eventId = Number(await c.book.eventCount());
+      emit({ type: "event", eventId, label, unit: category === 0 ? "min" : "mm" });
 
       // A policy may lock at most a quarter of the free liquidity, so make sure the vault is deep
       // enough for this scenario (earlier demo events keep part of it locked).

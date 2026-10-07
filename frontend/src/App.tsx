@@ -17,6 +17,8 @@ import { Landing } from "./screens/Landing";
 import { Vault } from "./screens/Vault";
 import { TxLog } from "./screens/TxLog";
 import { Docs } from "./screens/Docs";
+import { Lab } from "./screens/Lab";
+import { Presenter } from "./screens/Presenter";
 import { Operator } from "./screens/Operator";
 import { Admin } from "./screens/Admin";
 import { Disputes } from "./screens/Disputes";
@@ -223,6 +225,8 @@ function Layout() {
         <Route path="/vault" element={<Vault />} />
         <Route path="/log" element={<TxLog />} />
         <Route path="/docs" element={<Docs />} />
+        <Route path="/lab" element={<Lab />} />
+        <Route path="/presenter" element={<Presenter />} />
         <Route path="/operator" element={<Operator />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/disputes" element={<Disputes />} />

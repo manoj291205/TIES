@@ -1,5 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["./scripts", "./services", "./experiments"],
-  "exclude": ["frontend", "node_modules", "**/dist"]
+  "include": [
+    "./scripts",
+    "./services",
+    "./experiments"
+  ],
+  "exclude": [
+    "frontend",
+    "node_modules",
+    "**/dist",
+    "experiments/run.ts",
+    "experiments/lib/drivers.ts",
+    "experiments/charts.ts"
+  ]
 }

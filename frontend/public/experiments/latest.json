@@ -1,0 +1,829 @@
+{
+  "generatedAt": "2026-10-07T13:27:16.686Z",
+  "config": {
+    "eventsPerScenario": 100,
+    "policiesPerEvent": 20,
+    "sweepEvents": 30,
+    "seed": 1,
+    "payoutEthPerPolicy": "0.4",
+    "network": "hardhat in-process, chain 31337",
+    "params": {
+      "uMinEth": 2,
+      "zByRound": [
+        2.807,
+        3.023,
+        3.227
+      ]
+    },
+    "notes": [
+      "Each scenario uses a fresh deployment; reputations and dependence learned in one event carry into the next.",
+      "Baselines receive the same source readings as TIES. A forged report is accepted by a baseline (no source signature) and rejected by TIES.",
+      "BaselineMedian7 asks seven oracle keys: six distinct sources plus a second key on S2, because flight data has only six sources.",
+      "Disputed events are left for the admin: their policies count as held, not as wrong.",
+      "Late oracles are modelled as not revealing (their reveal would revert after the window)."
+    ]
+  },
+  "scenarios": {
+    "honest": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.0155,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.06623931623931624,
+        "autoRate": 0.766,
+        "defaultRate": 0.234,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 6.64,
+        "oracleGasPerEvent": 684783.88,
+        "settleGasPerEvent": 1220961.87,
+        "gasPerPolicy": 61048.0935,
+        "roundsPerEvent": 1.2,
+        "firstRoundInsufficientRate": 0,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.0225,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.4,
+          "settleGasPerEvent": 223497,
+          "gasPerPolicy": 11174.85,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.022,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.8,
+          "settleGasPerEvent": 225842.06,
+          "gasPerPolicy": 11292.103,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.0245,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250987.08,
+          "settleGasPerEvent": 240250.35,
+          "gasPerPolicy": 12012.5175,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.0185,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562837.04,
+          "settleGasPerEvent": 244759.46,
+          "gasPerPolicy": 12237.973,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Honest sources",
+      "description": "Three independent sources report the truth with small noise. Policies far from the truth settle in round 1 and nothing is left held."
+    },
+    "compromised-feed": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.015,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.055970149253731345,
+        "autoRate": 0.732,
+        "defaultRate": 0.268,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 10.04,
+        "oracleGasPerEvent": 1027659.6,
+        "settleGasPerEvent": 2886011.43,
+        "gasPerPolicy": 144300.5715,
+        "roundsPerEvent": 2.95,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.024,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.52,
+          "settleGasPerEvent": 223486.7,
+          "gasPerPolicy": 11174.335,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.4955,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173025.4,
+          "settleGasPerEvent": 223244,
+          "gasPerPolicy": 11162.2,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.4955,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250988.28,
+          "settleGasPerEvent": 237108,
+          "gasPerPolicy": 11855.4,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.0245,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562838.12,
+          "settleGasPerEvent": 244494.79,
+          "gasPerPolicy": 12224.7395,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Compromised feed",
+      "description": "Aggregator A is compromised (+90 min) and read by two oracle keys. Two keys on one feed count as one source, so round 1 cannot move money; recruited independent sources outvote the feed."
+    },
+    "two-keys-one-feed": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.0225,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.08490566037735849,
+        "autoRate": 0.735,
+        "defaultRate": 0.265,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 8.58,
+        "oracleGasPerEvent": 880326.5,
+        "settleGasPerEvent": 2098410.1,
+        "gasPerPolicy": 104920.505,
+        "roundsPerEvent": 2.15,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.0255,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.28,
+          "settleGasPerEvent": 223359.8,
+          "gasPerPolicy": 11167.99,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.0195,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.44,
+          "settleGasPerEvent": 225775.52,
+          "gasPerPolicy": 11288.776,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.0365,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250986.6,
+          "settleGasPerEvent": 239909.95,
+          "gasPerPolicy": 11995.4975,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.02,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562835.72,
+          "settleGasPerEvent": 244625.3,
+          "gasPerPolicy": 12231.265,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Two keys, one feed",
+      "description": "Everyone is honest, but two of the three oracle keys read the same source. N_eff stays below the minimum, no collateral moves, and the contract recruits an unrepresented source."
+    },
+    "noisy-source": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.018,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.056162246489859596,
+        "autoRate": 0.6795,
+        "defaultRate": 0.3205,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 8.02,
+        "oracleGasPerEvent": 823729.54,
+        "settleGasPerEvent": 1865589.94,
+        "gasPerPolicy": 93279.497,
+        "roundsPerEvent": 1.8,
+        "firstRoundInsufficientRate": 0.47,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.029,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.4,
+          "settleGasPerEvent": 223365.98,
+          "gasPerPolicy": 11168.299,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.024,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 225733.7,
+          "gasPerPolicy": 11286.685,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.028,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250987.08,
+          "settleGasPerEvent": 240028.57,
+          "gasPerPolicy": 12001.4285,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.0185,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562835.72,
+          "settleGasPerEvent": 244744.82,
+          "gasPerPolicy": 12237.241,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Noisy source",
+      "description": "One source is very noisy (sigma 25 min). Its weight collapses and the others decide."
+    },
+    "late-source": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.0215,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.08285163776493257,
+        "autoRate": 0.7405,
+        "defaultRate": 0.2595,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 7.46,
+        "oracleGasPerEvent": 725081.74,
+        "settleGasPerEvent": 1990936.16,
+        "gasPerPolicy": 99546.808,
+        "roundsPerEvent": 2.13,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.0265,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.64,
+          "settleGasPerEvent": 223432.52,
+          "gasPerPolicy": 11171.626,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.0265,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173025.16,
+          "settleGasPerEvent": 225844.12,
+          "gasPerPolicy": 11292.206,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.0265,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173025.16,
+          "settleGasPerEvent": 239843.11,
+          "gasPerPolicy": 11992.1555,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0,
+          "settledRate": 0,
+          "oracleTxsPerEvent": 6,
+          "oracleGasPerEvent": 484874.88,
+          "settleGasPerEvent": 0,
+          "gasPerPolicy": 0,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Late source",
+      "description": "One oracle commits but tries to reveal after the window closes. Its reveal reverts and the committee's remaining evidence is used."
+    },
+    "silent-source": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.018,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.0694980694980695,
+        "autoRate": 0.741,
+        "defaultRate": 0.259,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 7.48,
+        "oracleGasPerEvent": 727037.44,
+        "settleGasPerEvent": 1976349.53,
+        "gasPerPolicy": 98817.4765,
+        "roundsPerEvent": 2.11,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.03,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.28,
+          "settleGasPerEvent": 223466.1,
+          "gasPerPolicy": 11173.305,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.0265,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 225827.64,
+          "gasPerPolicy": 11291.382,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.0265,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 239787.01,
+          "gasPerPolicy": 11989.3505,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0,
+          "settledRate": 0,
+          "oracleTxsPerEvent": 6,
+          "oracleGasPerEvent": 484874.76,
+          "settleGasPerEvent": 0,
+          "gasPerPolicy": 0,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Silent source",
+      "description": "One oracle commits and never reveals. It gets zero weight and a reputation penalty."
+    },
+    "unavailable-source": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.02,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.078125,
+        "autoRate": 0.744,
+        "defaultRate": 0.256,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 6.52,
+        "oracleGasPerEvent": 672212.76,
+        "settleGasPerEvent": 1999450.12,
+        "gasPerPolicy": 99972.506,
+        "roundsPerEvent": 2.15,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.028,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.28,
+          "settleGasPerEvent": 223389.26,
+          "gasPerPolicy": 11169.463,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.023,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 225721.34,
+          "gasPerPolicy": 11286.067,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.023,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 239689.2,
+          "gasPerPolicy": 11984.46,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0,
+          "settledRate": 0,
+          "oracleTxsPerEvent": 6,
+          "oracleGasPerEvent": 484874.52,
+          "settleGasPerEvent": 0,
+          "gasPerPolicy": 0,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Unavailable source",
+      "description": "One source is down, so its oracle cannot fetch a report and never commits."
+    },
+    "borderline": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.281,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.281,
+        "autoRate": 0,
+        "defaultRate": 1,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 6.08,
+        "oracleGasPerEvent": 628525.88,
+        "settleGasPerEvent": 1125839.14,
+        "gasPerPolicy": 56291.957,
+        "roundsPerEvent": 1.02,
+        "firstRoundInsufficientRate": 0,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.306,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.52,
+          "settleGasPerEvent": 219254.46,
+          "gasPerPolicy": 10962.723,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.272,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173025.04,
+          "settleGasPerEvent": 222855.14,
+          "gasPerPolicy": 11142.757,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.284,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250987.44,
+          "settleGasPerEvent": 237184.97,
+          "gasPerPolicy": 11859.2485,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.2615,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562837.16,
+          "settleGasPerEvent": 242511.2,
+          "gasPerPolicy": 12125.56,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Borderline value",
+      "description": "Policies sit one minute either side of the truth. The interval cannot separate them, escalation is judged futile and the rest goes to default, which can settle a borderline policy the wrong way."
+    },
+    "forged-report": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.017,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.06538461538461539,
+        "autoRate": 0.74,
+        "defaultRate": 0.26,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 8.46,
+        "oracleGasPerEvent": 786259.1,
+        "settleGasPerEvent": 2000093.89,
+        "gasPerPolicy": 100004.6945,
+        "roundsPerEvent": 2.14,
+        "firstRoundInsufficientRate": 1,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.022,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.52,
+          "settleGasPerEvent": 223451.06,
+          "gasPerPolicy": 11172.553,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.4955,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173025.4,
+          "settleGasPerEvent": 223244,
+          "gasPerPolicy": 11162.2,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.027,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250987.68,
+          "settleGasPerEvent": 240335.96,
+          "gasPerPolicy": 12016.798,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.02,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562837.64,
+          "settleGasPerEvent": 245789.06,
+          "gasPerPolicy": 12289.453,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Forged report",
+      "description": "One oracle changes the value after the source signed it. The reveal fails signature verification and reverts; the forged value never counts."
+    },
+    "inconsistent-rounds": {
+      "ties": {
+        "events": 100,
+        "policies": 2000,
+        "wrongRate": 0.018,
+        "wrongAmongAuto": 0,
+        "wrongAmongDefault": 0.07214428857715431,
+        "autoRate": 0.7505,
+        "defaultRate": 0.2495,
+        "heldRate": 0,
+        "oracleTxsPerEvent": 6.12,
+        "oracleGasPerEvent": 632556.44,
+        "settleGasPerEvent": 1108396.65,
+        "gasPerPolicy": 55419.8325,
+        "roundsPerEvent": 1.04,
+        "firstRoundInsufficientRate": 0,
+        "statuses": {
+          "FINAL": 100
+        }
+      },
+      "baselines": {
+        "single": {
+          "wrongRate": 0.0285,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 1,
+          "oracleGasPerEvent": 95062.4,
+          "settleGasPerEvent": 223372.16,
+          "gasPerPolicy": 11168.608,
+          "exceedsBlockLimit": 0
+        },
+        "avg2": {
+          "wrongRate": 0.019,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 2,
+          "oracleGasPerEvent": 173024.68,
+          "settleGasPerEvent": 225850.3,
+          "gasPerPolicy": 11292.515,
+          "exceedsBlockLimit": 0
+        },
+        "median3": {
+          "wrongRate": 0.018,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 3,
+          "oracleGasPerEvent": 250987.08,
+          "settleGasPerEvent": 240114.34,
+          "gasPerPolicy": 12005.717,
+          "exceedsBlockLimit": 0
+        },
+        "median7": {
+          "wrongRate": 0.0365,
+          "settledRate": 1,
+          "oracleTxsPerEvent": 7,
+          "oracleGasPerEvent": 562837.88,
+          "settleGasPerEvent": 243601.68,
+          "gasPerPolicy": 12180.084,
+          "exceedsBlockLimit": 0
+        }
+      },
+      "title": "Inconsistent rounds",
+      "description": "The sources recruited in round 2 disagree with round 1 by 45 min. Their reports are discounted by the agreement kernel, the interval widens, and the running intersection keeps everything already settled where it is."
+    }
+  },
+  "gasVsPolicies": [
+    {
+      "n": 10,
+      "tiesFinalizeRound": 549700,
+      "tiesApplyDefault": 518327,
+      "baselines": {
+        "single": 190038,
+        "avg2": 192381,
+        "median3": 206934,
+        "median7": 210803
+      }
+    },
+    {
+      "n": 50,
+      "tiesFinalizeRound": 527162,
+      "tiesApplyDefault": 479736,
+      "baselines": {
+        "single": 476516,
+        "avg2": 478653,
+        "median3": 493006,
+        "median7": 499105
+      }
+    },
+    {
+      "n": 100,
+      "tiesFinalizeRound": 537043,
+      "tiesApplyDefault": 473912,
+      "baselines": {
+        "single": 898466,
+        "avg2": 900603,
+        "median3": 915156,
+        "median7": 921178
+      }
+    },
+    {
+      "n": 250,
+      "tiesFinalizeRound": 535362,
+      "tiesApplyDefault": 494418,
+      "baselines": {
+        "single": 2164316,
+        "avg2": 2166659,
+        "median3": 2181495,
+        "median7": 2185487
+      }
+    },
+    {
+      "n": 500,
+      "tiesFinalizeRound": 527409,
+      "tiesApplyDefault": 493492,
+      "baselines": {
+        "single": 4273654,
+        "avg2": 4276409,
+        "median3": 4290473,
+        "median7": 4295160
+      }
+    },
+    {
+      "n": 1000,
+      "tiesFinalizeRound": 529295,
+      "tiesApplyDefault": 470888,
+      "baselines": {
+        "single": 8492948,
+        "avg2": 8495703,
+        "median3": 8510185,
+        "median7": 8515678
+      }
+    }
+  ],
+  "sweeps": {
+    "compromisedSources": [
+      {
+        "compromisedSources": 0,
+        "ties": 0.02666666666666667,
+        "single": 0.041666666666666664,
+        "avg2": 0.021666666666666667,
+        "median3": 0.03,
+        "median7": 0.02
+      },
+      {
+        "compromisedSources": 1,
+        "ties": 0.03166666666666667,
+        "single": 0.5516666666666666,
+        "avg2": 0.5516666666666666,
+        "median3": 0.035,
+        "median7": 0.023333333333333334
+      },
+      {
+        "compromisedSources": 2,
+        "ties": 0.03166666666666667,
+        "single": 0.47833333333333333,
+        "avg2": 0.47833333333333333,
+        "median3": 0.47833333333333333,
+        "median7": 0.055
+      },
+      {
+        "compromisedSources": 3,
+        "ties": 0.505,
+        "single": 0.505,
+        "avg2": 0.505,
+        "median3": 0.505,
+        "median7": 0.505
+      }
+    ],
+    "uMin": [
+      {
+        "uMinEth": 0.4,
+        "oracleTxsPerEvent": 7.8,
+        "roundsPerEvent": 1.6,
+        "wrongRate": 0.02,
+        "autoRate": 0.7666666666666667
+      },
+      {
+        "uMinEth": 0.8,
+        "oracleTxsPerEvent": 7.666666666666667,
+        "roundsPerEvent": 1.5,
+        "wrongRate": 0.01,
+        "autoRate": 0.7783333333333333
+      },
+      {
+        "uMinEth": 2,
+        "oracleTxsPerEvent": 6.733333333333333,
+        "roundsPerEvent": 1.2333333333333334,
+        "wrongRate": 0.02666666666666667,
+        "autoRate": 0.76
+      },
+      {
+        "uMinEth": 4,
+        "oracleTxsPerEvent": 6,
+        "roundsPerEvent": 1,
+        "wrongRate": 0.011666666666666667,
+        "autoRate": 0.7583333333333333
+      },
+      {
+        "uMinEth": 8,
+        "oracleTxsPerEvent": 6,
+        "roundsPerEvent": 1,
+        "wrongRate": 0.015,
+        "autoRate": 0.7666666666666667
+      },
+      {
+        "uMinEth": 16,
+        "oracleTxsPerEvent": 6,
+        "roundsPerEvent": 1,
+        "wrongRate": 0.023333333333333334,
+        "autoRate": 0.76
+      }
+    ],
+    "alpha": [
+      {
+        "alpha": 0.2,
+        "z1": 1.644853625133699,
+        "autoRate": 0.8533333333333334,
+        "defaultRate": 0.14666666666666667,
+        "wrongRate": 0.015,
+        "oracleTxsPerEvent": 6.133333333333334
+      },
+      {
+        "alpha": 0.1,
+        "z1": 1.959963986120195,
+        "autoRate": 0.845,
+        "defaultRate": 0.155,
+        "wrongRate": 0.021666666666666667,
+        "oracleTxsPerEvent": 6
+      },
+      {
+        "alpha": 0.05,
+        "z1": 2.2414027264652865,
+        "autoRate": 0.7933333333333333,
+        "defaultRate": 0.20666666666666667,
+        "wrongRate": 0.03,
+        "oracleTxsPerEvent": 6
+      },
+      {
+        "alpha": 0.01,
+        "z1": 2.807033770114134,
+        "autoRate": 0.7566666666666667,
+        "defaultRate": 0.24333333333333335,
+        "wrongRate": 0.018333333333333333,
+        "oracleTxsPerEvent": 6.466666666666667
+      },
+      {
+        "alpha": 0.001,
+        "z1": 3.480756400433539,
+        "autoRate": 0.7183333333333334,
+        "defaultRate": 0.2816666666666667,
+        "wrongRate": 0.02,
+        "oracleTxsPerEvent": 7.266666666666667
+      }
+    ]
+  },
+  "elapsedSeconds": 756
+}

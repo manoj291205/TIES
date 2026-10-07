@@ -13,6 +13,7 @@ import {
   defaultChainId,
   defaultRpcUrl,
   errorMessage,
+  getJson,
   handlePreflight,
   hardhatAccount,
   makeLogger,
@@ -28,6 +29,7 @@ import { SCENARIOS } from "../../../experiments/scenarios";
 import { deployAndSeed } from "../../../scripts/lib/stack";
 import { seedEvents } from "../../../scripts/lib/seed";
 import { RunnerUrls, ScenarioRunner, defaultUrls } from "./runner";
+import { spawn } from "node:child_process";
 
 /** Localhost-only presenter API (REST + server-sent events). Only serves the local dev chain. */
 export class DemoServer {
@@ -67,6 +69,36 @@ export class DemoServer {
   close(): void {
     this.server?.closeAllConnections();
     this.server?.close();
+  }
+
+  private recordRun(r: {
+    scenario: string;
+    eventId: number;
+    ok: boolean;
+    status: string;
+    txCount: number;
+    gasTotal: string;
+    wrongSettlements: number;
+    rounds: unknown[];
+  }) {
+    const dir = path.join(repoRoot(), "experiments", "results", "raw");
+    const file = path.join(dir, "lab-runs.json");
+    fs.mkdirSync(dir, { recursive: true });
+    const list = fs.existsSync(file)
+      ? (JSON.parse(fs.readFileSync(file, "utf8")) as unknown[])
+      : [];
+    list.unshift({
+      at: new Date().toISOString(),
+      scenario: r.scenario,
+      eventId: r.eventId,
+      ok: r.ok,
+      status: r.status,
+      txCount: r.txCount,
+      gasTotal: r.gasTotal,
+      wrong: r.wrongSettlements,
+      rounds: r.rounds.length,
+    });
+    fs.writeFileSync(file, JSON.stringify(list.slice(0, 50), null, 2));
   }
 
   private sourceUrl(idOrKey: string): string {
@@ -172,7 +204,8 @@ export class DemoServer {
       this.running = m[1];
       sseHeaders(res);
       try {
-        await this.runner.run(m[1], (e) => sseSend(res, e.type, e));
+        const result = await this.runner.run(m[1], (e) => sseSend(res, e.type, e));
+        this.recordRun(result);
         sseSend(res, "done", { scenario: m[1] });
       } catch (err) {
         sseSend(res, "failed", { message: errorMessage(err) });
@@ -180,6 +213,81 @@ export class DemoServer {
         this.running = null;
         res.end();
       }
+      return;
+    }
+
+    if (route === "POST /fund") {
+      for (let i = 0; i < 20; i++) {
+        await this.provider.send("hardhat_setBalance", [
+          hardhatAccount(i).address,
+          "0x21e19e0c9bab2400000",
+        ]);
+      }
+      return sendJson(res, 200, { ok: true, eth: 10000 });
+    }
+
+    if (route === "GET /sources") {
+      const out = [];
+      for (const s of SOURCES) {
+        try {
+          out.push({
+            id: s.id,
+            key: s.key,
+            name: s.name,
+            ...(await getJson<Record<string, unknown>>(`${this.urls.source(s.id)}/control`)),
+          });
+        } catch {
+          out.push({ id: s.id, key: s.key, name: s.name, unreachable: true });
+        }
+      }
+      return sendJson(res, 200, out);
+    }
+
+    if (route === "GET /nodes") {
+      return sendJson(res, 200, await getJson(`${this.urls.oracle}/status`));
+    }
+
+    if (route === "GET /runs") {
+      const file = path.join(repoRoot(), "experiments", "results", "raw", "lab-runs.json");
+      return sendJson(
+        res,
+        200,
+        fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [],
+      );
+    }
+
+    if (route === "POST /experiments/run") {
+      if (this.running) throw new HttpError(409, `"${this.running}" is already running`);
+      this.running = "experiments";
+      sseHeaders(res);
+      const child = spawn(
+        process.execPath,
+        [
+          path.join(repoRoot(), "node_modules", "hardhat", "internal", "cli", "bootstrap.js"),
+          "run",
+          "experiments/run.ts",
+        ],
+        {
+          cwd: repoRoot(),
+          env: { ...process.env },
+        },
+      );
+      const forward = (chunk: Buffer) =>
+        chunk
+          .toString()
+          .split(/\r?\n/)
+          .filter(Boolean)
+          .forEach((line) => sseSend(res, "progress", { line }));
+      child.stdout.on("data", forward);
+      child.stderr.on("data", forward);
+      await new Promise<void>((resolve) =>
+        child.on("close", (code) => {
+          sseSend(res, code === 0 ? "done" : "failed", { code });
+          resolve();
+        }),
+      );
+      this.running = null;
+      res.end();
       return;
     }
 

@@ -33,7 +33,10 @@
     "stack:demo-server": "node -r ts-node/register/transpile-only services/demo-server/src/main.ts",
     "dev:stack": "hardhat compile && concurrently --kill-others-on-fail -n node,init,sources,oracles,keeper,demo -c gray,yellow,cyan,magenta,green,blue \"npm run node:local\" \"npm run stack:init\" \"npm run stack:sources\" \"npm run stack:oracles\" \"npm run stack:keeper\" \"npm run stack:demo-server\"",
     "demo:cli": "node -r ts-node/register/transpile-only scripts/demo-cli.ts",
-    "dev:web": "npm -w frontend run dev"
+    "dev:web": "npm -w frontend run dev",
+    "experiments": "hardhat run experiments/run.ts",
+    "experiments:charts": "node -r ts-node/register/transpile-only experiments/charts.ts",
+    "experiments:report": "node -r ts-node/register/transpile-only experiments/report.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -46,6 +49,7 @@
     "@nomicfoundation/hardhat-verify": "2.0.12",
     "@nomicfoundation/ignition-core": "0.15.8",
     "@openzeppelin/contracts": "^5.1.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.20",
