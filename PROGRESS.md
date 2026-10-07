@@ -9,7 +9,7 @@
 - [x] M4 Off-chain services and one-command local stack (`m4-services`)
 - [x] M5 Frontend foundation and design system (`m5-frontend-foundation`)
 - [x] M6 Core user screens (`m6-core-screens`)
-- [ ] M7 Remaining role screens (`m7-role-screens`)
+- [x] M7 Remaining role screens (`m7-role-screens`)
 - [ ] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
 - [ ] M9 Hardening, polish, documentation (`m9-hardening`)
 - [ ] M10 Sepolia deployment (gated) (`m10-sepolia`)
@@ -252,3 +252,34 @@ Known issues:
 - The block-based countdowns follow the chain's latest block time, which does not move on an idle
   local chain until the presenter advances time.
 - Light theme not compared screen by screen yet (dark checked); polish is planned for M9.
+
+### M7
+
+Built (each screen reads and writes the real contracts):
+
+- Liquidity vault: totals and utilization, free/locked/claimable split, your position and what you
+  can withdraw now, exposure by event and category, history, deposit and withdraw with a plain
+  explanation when more is asked than the free share.
+- Operator console: registration (read-only, set by the admin), source adapter details, reputation
+  with a sparkline, inbox from `RoundOpened`, commit by hand (fetches a signed report from the
+  source, keeps the salt in local storage) and reveal, history with accuracy against the final
+  value. The sources gained a plain `POST /report` twin of the MCP tool for this console
+  (localhost use only; oracle nodes still use MCP).
+- Admin: parameter editor per category (changed fields highlighted, saved as a new version),
+  sources and tool-hash allowlist, oracle allowlist and committee flag, create event. Read-only
+  for every other account.
+- Disputes: disputed events and pending defaults; resolve with a money preview and a confirmation
+  step; apply default after the challenge period.
+- Landing with live stats and a live chart, wallet and network gate states (no MetaMask, request
+  pending or declined, wrong network, unreachable RPC, not deployed), transaction and event log
+  with filters, pause and receipt detail, docs and FAQ with add-network buttons.
+
+Checked in the browser against a live stack with Hardhat accounts standing in for MetaMask: an
+operator committed and revealed by hand, the admin created an event, a challenger challenged a
+pending default from the explorer, the admin resolved it from the disputes screen, and an LP
+deposited into the vault. Real MetaMask has not been used.
+
+Known issues:
+
+- Light theme and 1280 px layouts are checked in M9 polish.
+- The category parameter editor shows raw fixed-point numbers (for example 1.8 for N_min).

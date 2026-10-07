@@ -17,6 +17,9 @@ import { Landing } from "./screens/Landing";
 import { Vault } from "./screens/Vault";
 import { TxLog } from "./screens/TxLog";
 import { Docs } from "./screens/Docs";
+import { Operator } from "./screens/Operator";
+import { Admin } from "./screens/Admin";
+import { Disputes } from "./screens/Disputes";
 import { Marketplace } from "./screens/Marketplace";
 import { Explorer } from "./screens/Explorer";
 import { Buy } from "./screens/Buy";
@@ -220,9 +223,23 @@ function Layout() {
         <Route path="/vault" element={<Vault />} />
         <Route path="/log" element={<TxLog />} />
         <Route path="/docs" element={<Docs />} />
+        <Route path="/operator" element={<Operator />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/disputes" element={<Disputes />} />
         {ROUTES.filter(
           ([id]) =>
-            !["markets", "explorer", "buy", "policies", "vault", "log", "docs"].includes(id),
+            ![
+              "markets",
+              "explorer",
+              "buy",
+              "policies",
+              "vault",
+              "log",
+              "docs",
+              "operator",
+              "admin",
+              "disputes",
+            ].includes(id),
         ).map(([id, title]) => (
           <Route key={id} path={`/${id}/*`} element={<Pending title={title} />} />
         ))}

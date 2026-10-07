@@ -175,6 +175,13 @@ export class SourceServer {
       await transport.handleRequest(req, res, body);
       return;
     }
+    if (url.pathname === "/report" && req.method === "POST") {
+      // Plain-HTTP twin of the MCP tool, so the operator console in a browser can fetch a signed
+      // report by hand. Oracle nodes still use MCP only.
+      const body = (await readBody(req)) as Record<string, unknown> | undefined;
+      sendJson(res, 200, await this.report(body ?? {}));
+      return;
+    }
     if (url.pathname === "/health") {
       sendJson(res, 200, { source: def.key, name: def.name, down: this.control.down });
       return;

@@ -225,3 +225,44 @@ export function useEventList() {
 
   return { events: rows, error, loading: rows === null && !error };
 }
+
+export interface CategoryInfo {
+  category: number;
+  name: string;
+  version: number;
+  params: Params;
+}
+
+const CATEGORY_NAMES = ["Flight delay", "Rainfall 24 h"];
+
+/** Latest parameters of every configured category. */
+export function useCategories(): CategoryInfo[] {
+  const { read } = useContracts();
+  const { block } = useNetwork();
+  const [list, setList] = useState<CategoryInfo[]>([]);
+  useEffect(() => {
+    if (!read) return setList([]);
+    let alive = true;
+    void (async () => {
+      const out: CategoryInfo[] = [];
+      for (let category = 0; category < CATEGORY_NAMES.length; category++) {
+        try {
+          const version = Number(await read.registry.latestVersion(category));
+          out.push({
+            category,
+            name: CATEGORY_NAMES[category],
+            version,
+            params: await fetchParams(read.registry, category, version),
+          });
+        } catch {
+          /* category not configured */
+        }
+      }
+      if (alive) setList(out);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [read, block?.number]);
+  return list;
+}
