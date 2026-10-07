@@ -60,6 +60,8 @@ const MESSAGES: Record<string, (a: Args) => string> = {
   InsufficientGasForLearning: () =>
     "Not enough gas was supplied to finish the event. Retry with a higher gas limit.",
   CursorRegression: () => "The settlement cursors would move backwards, which is not allowed.",
+  NothingOwed: () => "There is no returned bond waiting for this account.",
+  BondTransferFailed: () => "The bond could not be sent: the receiving account rejected the ETH.",
   InvalidParams: (a) => `Invalid parameter: ${a[0]}.`,
   InvalidCurve: () => "The exceedance curve is invalid.",
   InvalidDependence: () => "The dependence value is invalid.",

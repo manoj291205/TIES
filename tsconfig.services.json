@@ -1,10 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": [
-    "./scripts",
-    "./services",
-    "./experiments"
-  ],
+  "include": ["./scripts", "./services", "./experiments"],
   "exclude": [
     "frontend",
     "node_modules",

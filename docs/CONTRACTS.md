@@ -65,22 +65,33 @@ timestamp may lie.
 
 ## Gas
 
-Measured with `REPORT_GAS=true npx hardhat test` (optimizer on, 200 runs).
+Snapshot from `REPORT_GAS=true npx hardhat test` (optimizer on, 200 runs, 151 tests). Values are
+min / max / average over every call the tests make, so they mix small and large cases. The engine
+rows come from the test harness, which is the production engine plus two test-only helpers.
 
-| Function                          | Gas (avg)                           |
-| --------------------------------- | ----------------------------------- |
-| `PolicyBook.bind`                 | 435,444 (340,869 - 571,942)         |
-| `PolicyBook.claim`                | 59,842                              |
-| `SettlementEngine.openRound`      | 397,578 (up to 8 committee members) |
-| `SettlementEngine.commit`         | 57,468                              |
-| `SettlementEngine.reveal`         | 147,704                             |
-| `SettlementEngine.finalizeRound`  | 725,260 (246,527 - 1,171,771)       |
-| `SettlementEngine.applyDefault`   | 583,145 (includes learning)         |
-| `SettlementEngine.resolveDispute` | 874,808 (includes learning)         |
-| `Vault.deposit` / `withdraw`      | 85,438 / 49,475                     |
+| Function                          | Min     | Max       | Average |
+| --------------------------------- | ------- | --------- | ------- |
+| `PolicyBook.bind`                 | 340,891 | 596,167   | 446,874 |
+| `PolicyBook.claim`                | 59,160  | 63,960    | 61,401  |
+| `SettlementEngine.openRound`      | 283,149 | 477,213   | 399,223 |
+| `SettlementEngine.commit`         | 53,848  | 73,756    | 56,985  |
+| `SettlementEngine.reveal`         | 123,296 | 164,839   | 149,628 |
+| `SettlementEngine.finalizeRound`  | 174,568 | 1,174,051 | 721,827 |
+| `SettlementEngine.challenge`      | -       | -         | 80,829  |
+| `SettlementEngine.applyDefault`   | 468,632 | 1,138,436 | 760,854 |
+| `SettlementEngine.resolveDispute` | 470,932 | 1,164,423 | 780,939 |
+| `Vault.deposit`                   | 55,743  | 92,211    | 87,978  |
+| `Vault.withdraw`                  | 44,699  | 49,487    | 48,284  |
 
-`finalizeRound` is the widest range because it covers insufficient rounds (cheap), rounds that
+`finalizeRound` has the widest range because it covers insufficient rounds (cheap), rounds that
 escalate (planner call and committee storage) and rounds that finish the event (learning update).
+`applyDefault` and `resolveDispute` include the learning update. Because of `LEARNING_GAS_FLOOR`
+(6,000,000), callers of `finalizeRound`, `applyDefault` and `resolveDispute` should send
+`estimateGas` plus a margin rather than a fixed limit.
+
+Binding is the expensive user step: it reads the event's parameter version from the registry
+(including the curve and z arrays), checks the capacity window on the Fenwick tree and writes the
+tree. The experiments compare it with the baselines in [EXPERIMENTS.md](EXPERIMENTS.md).
 
 ### `finalizeRound` does not grow with the number of policies
 
@@ -89,8 +100,8 @@ still held (test `settlement cost does not grow with the number of policies`):
 
 | Policies on the event | `finalizeRound` gas |
 | --------------------- | ------------------- |
-| 10                    | 546,861             |
-| 1,000                 | 546,861             |
+| 10                    | 530,466             |
+| 1,000                 | 530,466             |
 
 The cost depends on the number of reports (at most 16) and sources, not on policies.
 
@@ -98,16 +109,79 @@ The cost depends on the number of reports (at most 16) and sources, not on polic
 
 | Contract                | Bytes  |
 | ----------------------- | ------ |
-| `SettlementEngine`      | 22,826 |
-| `TIESRegistry`          | 14,300 |
+| `SettlementEngine`      | 23,256 |
+| `TIESRegistry`          | 14,463 |
 | `PolicyBook`            | 12,257 |
 | `LearningModule`        | 7,002  |
-| `EscalationPlanner`     | 6,970  |
+| `EscalationPlanner`     | 6,937  |
 | `Vault`                 | 3,976  |
 | `SignedAdapterVerifier` | 2,381  |
 
-The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 1.7 KB of
+The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 1.3 KB of
 headroom, so escalation and learning live in separate contracts.
+
+## API
+
+Only the functions a client or operator calls are listed. Every function has NatSpec in the source.
+
+### `Vault`
+
+| Function                                                                            | Who           |
+| ----------------------------------------------------------------------------------- | ------------- |
+| `deposit() payable returns (shares)`                                                | anyone        |
+| `withdraw(assets) returns (shares)`, at most `maxWithdraw(account)`                 | LP            |
+| `totalAssets()`, `freeLiquidity()`, `locked()`, `claimable()`, `convertToAssets(s)` | view          |
+| `sharesOf(account)`, `totalShares()`, `maxWithdraw(account)`                        | view          |
+| `lock(amount)` / `payClaim(to, amount)`                                             | `BOOK_ROLE`   |
+| `unlock(amount)` / `moveLockedToClaimable(amount)`                                  | `ENGINE_ROLE` |
+
+### `TIESRegistry`
+
+| Function                                                                                       | Who           |
+| ---------------------------------------------------------------------------------------------- | ------------- |
+| `setCategory(category, params) returns (version)`                                              | admin         |
+| `registerSource(signer, category, name, toolHashes)`, `setSourceActive`, `setToolHash`         | admin         |
+| `registerOracle(oracle, category, sourceId, primary)`, `updateOracle(...)`                     | admin         |
+| `getParams(category, version)`, `latestVersion`, `versionCount`                                | view          |
+| `getSource`, `sourceIdOfSigner`, `toolHashAllowed`, `activeSourceCount`                        | view          |
+| `getOracle`, `isOracle`, `oracleCount`, `oracleAt`, `activePrimaryOracles`, `activeOracleInfo` | view          |
+| `reputation`, `reputationWeight`, `dependence`, `dependenceVector`, `dependenceMatrix`         | view          |
+| `setReputation`, `setDependence`                                                               | `ENGINE_ROLE` |
+
+### `PolicyBook`
+
+| Function                                                                               | Who    |
+| -------------------------------------------------------------------------------------- | ------ |
+| `createEvent(category, label, observationKey, cutoff, observationEnd)`                 | admin  |
+| `setEngine(engine)`                                                                    | admin  |
+| `quote(eventId, bucket, payout)`                                                       | view   |
+| `bind(eventId, bucket, payout) payable returns (policyId)`; excess premium is refunded | anyone |
+| `claim(policyId)`; pays the holder once the bucket is at or below the pay cursor       | anyone |
+| `eventData`, `eventMeta`, `eventLocked`, `getPolicy`, `policiesOf`                     | view   |
+| `rangeCollateral(eventId, from, to)`, `bucketsInRange(eventId, from, to)` (max 1,024)  | view   |
+| `windowOf(eventId)`, `capacityLeftNear(eventId, bucket)`, `nearestAvailableBucket`     | view   |
+
+### `SettlementEngine`
+
+| Function                                                                                                           | Who              |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| `openRound(eventId)` after the observation end                                                                     | anyone (keeper)  |
+| `commit(eventId, round, commitHash)`                                                                               | committee member |
+| `reveal(eventId, round, value, ts, toolHash, argsHash, responseHash, sourceSig, salt)`                             | committee member |
+| `finalizeRound(eventId)` after the reveal deadline                                                                 | anyone (keeper)  |
+| `challenge(eventId) payable` with exactly `CHALLENGE_BOND` (0.05 ETH) while `DEFAULT_PENDING`                      | anyone           |
+| `applyDefault(eventId)` after the challenge deadline                                                               | anyone (keeper)  |
+| `resolveDispute(eventId, finalValue)`                                                                              | admin            |
+| `withdrawBond()`; a returned bond that could not be pushed to the challenger                                       | challenger       |
+| `eventState`, `payCursor`, `noPayCursor`, `held`, `reportCount`, `reportAt`, `committeeOf`, `commitOf`, `bondOwed` | view             |
+
+`commitHash = keccak256(abi.encode(value, ts, toolHash, argsHash, responseHash, sourceSig, salt,
+oracle))`. The source signs `keccak256(abi.encode(chainId, engine, eventId, value, ts, toolHash,
+argsHash, responseHash))` as an EIP-191 personal message.
+
+A returned bond is sent with a 50,000 gas cap (`BOND_REFUND_GAS`). If the challenger cannot accept
+it, it is recorded in `bondOwed` (`BondOwed` event) and the challenger calls `withdrawBond`. This
+keeps a challenger contract from blocking the resolution. A forfeited bond goes to the vault.
 
 ## Worked example (flight AI 101)
 
@@ -142,7 +216,8 @@ the tolerance with the same sign, and decays toward the prior otherwise.
 `OracleUpdated`, `ReputationUpdated`, `DependenceUpdated`, `EventCreated`, `PolicyBound`, `Claimed`,
 `EngineSet`, `Deposit`, `Withdraw`, `RoundOpened`, `ReportCommitted`, `ReportRevealed`,
 `RoundFinalized`, `EventStatusChanged`, `EventDefaultPending`, `EventChallenged`, `EventDisputed`,
-`EscalationRequested`, `DefaultApplied`, `DisputeResolved`, `EventFinalized`, `LearningSkipped`.
+`EscalationRequested`, `DefaultApplied`, `DisputeResolved`, `EventFinalized`, `LearningSkipped`,
+`BondOwed`.
 
 `RoundFinalized(eventId, round, status, V, sigma, nEff, L, U, payCursor, noPayCursor, newPay,
 newNoPay, held)`: `status` is 0 insufficient, 1 valid, 2 disputed. Before the first valid interval

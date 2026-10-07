@@ -1,4 +1,4 @@
-﻿# Progress
+# Progress
 
 ## Milestones
 
@@ -11,7 +11,7 @@
 - [x] M6 Core user screens (`m6-core-screens`)
 - [x] M7 Remaining role screens (`m7-role-screens`)
 - [x] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
-- [ ] M9 Hardening, polish, documentation (`m9-hardening`)
+- [x] M9 Hardening, polish, documentation (`m9-hardening`)
 - [ ] M10 Sepolia deployment (gated) (`m10-sepolia`)
 
 ## Notes
@@ -340,3 +340,44 @@ Deviations and assumptions:
 - The component gallery (sample values) is now loaded only in development builds; the production
   bundle contains no sample numbers.
 - Open for the owner: TIES binding gas (D16).
+
+### M9
+
+Built:
+
+- Security pass over every contract and `docs/SECURITY.md` (trust model, threats and mitigations
+  with the tests that cover them, known limitations, Slither results).
+- Fix: `resolveDispute` pushed a returned bond with all remaining gas before finishing, so a
+  challenger contract could burn the gas and block the resolution (collateral stuck in
+  `DISPUTED`). The bond is now paid last, with a 50,000 gas cap; if that fails it is recorded in
+  `bondOwed` and the challenger calls `withdrawBond`. New `BondOwed` event and `NothingOwed`
+  error. The Disputes screen shows a "withdraw bond" banner when something is owed.
+- Input bounds: the registry rejects more than 32 curve points or z values.
+  `LearningModule.setEngine` rejects the zero address. The baselines' `claim` emits before the
+  transfer.
+- Slither 0.11.6: 74 results remain, all assessed in `docs/SECURITY.md` (by design, intentional,
+  or bounded); none open.
+- Edge-case tests (`test/edgeCases.test.ts`): no policies, one bucket settled or held together,
+  value 0, values at and above the top bucket, every oracle silent, every candidate source
+  already represented, a rain-only event, and an LP withdrawing while collateral is held.
+- The services integration test is skipped under coverage (instrumented bytecode is too large
+  for the spawned node), like the size test.
+- Docs: README (Mermaid architecture, quick start, document index), `docs/ARCHITECTURE.md`,
+  `docs/DEMO_SCRIPT.md` (seven minutes, account per step), `docs/RUNNING.md` (web app, MetaMask,
+  experiments, Slither), `docs/CONTRACTS.md` (API table, new gas snapshot, sizes).
+- Generated experiment results are excluded from Prettier.
+
+Tests: 151 contract tests (5 pending under coverage only), 6 `ties-math`, 6 frontend. Coverage
+99.7% lines, 100% functions, 91.4% branches. `finalizeRound` 530,466 gas at 10 and 1,000
+policies. `SettlementEngine` is 23,256 bytes.
+
+UI check: an automated sweep of every route at 1440 px in light and dark found no horizontal
+overflow and no WCAG AA text-contrast failures (the one hit, the N_eff gauge label, is a
+measurement artifact: the label sits above a 2 px marker). The 1280 px sweep and the
+side-by-side comparison with each PNG were not finished in this session.
+
+Known issues:
+
+- D16 (owner): TIES binding gas (about 378k against about 89k for the baselines) is reported as
+  measured. It is not optimised, pending the owner's answer.
+- The production bundle is about 660 kB (one chunk); fine for a local app.

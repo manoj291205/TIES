@@ -10,3 +10,5 @@ package-lock.json
 CLAUDE.md
 HANDOFF.md
 .claude
+experiments/results
+frontend/public/experiments

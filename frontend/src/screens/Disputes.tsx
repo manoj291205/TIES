@@ -189,6 +189,49 @@ function DisputeCard({ row }: { row: EventRow }) {
   );
 }
 
+/** A returned challenge bond that could not be sent straight to the connected account. */
+function OwedBond() {
+  const { read, getWriteContracts } = useContracts();
+  const { account } = useWallet();
+  const { block } = useNetwork();
+  const tx = useTx();
+  const [owed, setOwed] = useState(0n);
+
+  useEffect(() => {
+    if (!read || !account) return setOwed(0n);
+    read.engine
+      .bondOwed(account)
+      .then((v: bigint) => setOwed(v))
+      .catch(() => setOwed(0n));
+  }, [read, account, block?.number]);
+
+  if (owed === 0n && tx.state === "idle") return null;
+  return (
+    <Banner
+      tone="info"
+      title="A returned challenge bond is waiting for you"
+      actions={
+        owed > 0n ? (
+          <Button
+            size="sm"
+            disabled={tx.state === "awaiting" || tx.state === "pending"}
+            onClick={() =>
+              void tx.run("Withdraw bond", async () =>
+                ((await getWriteContracts()).engine as Contract).withdrawBond(),
+              )
+            }
+          >
+            Withdraw <Amount value={weiToEth(owed)} />
+          </Button>
+        ) : null
+      }
+    >
+      Your challenge was upheld, but the bond could not be sent to this account automatically.
+      {tx.state !== "idle" ? ` Withdrawal: ${tx.state}.` : null}
+    </Banner>
+  );
+}
+
 /** Disputes queue: disputed events and pending defaults. */
 export function Disputes() {
   const { events } = useEventList();
@@ -206,6 +249,7 @@ export function Disputes() {
           Resolving a dispute needs the admin account.
         </Banner>
       ) : null}
+      <OwedBond />
       {queue.length === 0 ? (
         <EmptyState title="No disputes" body="Nothing is waiting for review." />
       ) : (

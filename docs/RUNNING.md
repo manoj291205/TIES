@@ -165,4 +165,44 @@ secrets. Never commit `.env`. Environment variables the local services understan
 
 ## Web app
 
-`npm run dev:web` starts the frontend (added in a later milestone).
+```bash
+npm run dev:web
+```
+
+Opens on http://localhost:5173. It reads the deployment file and ABIs written by the stack, so
+start `npm run dev:stack` first. `npm run build` produces a static build in `frontend/dist`
+(do not host it publicly).
+
+MetaMask setup for the local chain:
+
+1. Add the network: RPC `http://127.0.0.1:8545`, chain id 31337, currency ETH. The app asks
+   MetaMask to add and switch to it when you connect.
+2. Import the accounts you need (see the table above) from the private keys the `node` process
+   prints at start-up. They are Hardhat's public development keys; never use them elsewhere.
+3. After `POST /reset` or the Presenter's Reset, clear each account's activity tab data in
+   MetaMask (Settings > Advanced), or it will reuse stale nonces.
+
+The Presenter screen (localhost only) resets, funds accounts, advances time and switches source
+and node modes. The Live demo lab runs scenarios and the experiments. A seven-minute script is in
+[DEMO_SCRIPT.md](DEMO_SCRIPT.md).
+
+## Experiments
+
+```bash
+npm run experiments
+npm run experiments:charts
+npm run experiments:report
+```
+
+The first command runs every scenario against TIES and the four baselines on an in-process Hardhat
+network (several minutes); the next two render `docs/figures/` and `docs/EXPERIMENTS.md`.
+
+## Static analysis
+
+With Python 3 and `pip install slither-analyzer`:
+
+```bash
+slither . --filter-paths "node_modules|contracts/mocks"
+```
+
+Results and their assessment are in [SECURITY.md](SECURITY.md).
