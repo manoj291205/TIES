@@ -128,6 +128,7 @@ export interface EventView {
   settledPay: bigint;
   settledNoPay: bigint;
   bucketCount: number;
+  disputeReason: number;
 }
 
 /** State of one event, re-read on every new block. */
@@ -179,6 +180,7 @@ export function useEventState(eventId: number | null) {
           settledPay: st.settledPay,
           settledNoPay: st.settledNoPay,
           bucketCount: Number(st.bucketCount),
+          disputeReason: Number(st.disputeReason),
         });
         setError(null);
       } catch (err) {

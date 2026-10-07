@@ -8,7 +8,7 @@
 - [x] M3 Escalation, recruitment, learning (`m3-escalation-learning`)
 - [x] M4 Off-chain services and one-command local stack (`m4-services`)
 - [x] M5 Frontend foundation and design system (`m5-frontend-foundation`)
-- [ ] M6 Core user screens (`m6-core-screens`)
+- [x] M6 Core user screens (`m6-core-screens`)
 - [ ] M7 Remaining role screens (`m7-role-screens`)
 - [ ] M8 Baselines, experiments, demo lab, presenter panel (`m8-demo-experiments`)
 - [ ] M9 Hardening, polish, documentation (`m9-hardening`)
@@ -221,3 +221,34 @@ Known issues:
 
 - Not yet checked against MetaMask in a real browser session, and the screens are placeholders.
 - The in-browser check so far is the gallery rendering in dark mode without console errors.
+
+### M6
+
+Built (all four screens read live contract data; no demo values):
+
+- Events marketplace: category, status and search filters kept in the URL, loading, empty and
+  error states, cards with real capacity and cover bound, links to buy and to the explorer.
+- Settlement explorer: threshold chart coloured from the engine's settlement cursors, round
+  timeline from `RoundFinalized` (round interval = V ± z·sigma) with the running intersection,
+  sources grouped by origin with per-report weights recomputed off-chain with `ties-math` (shown
+  only when they reproduce the on-chain V and N_eff), N_eff gauge, money split, escalation panel
+  with countdowns and commit count, live ticker, and the insufficient, disputed and settled
+  states. Actions: open round, settle now (`finalizeRound` with a gas limit from `estimateGas`,
+  which covers the learning gas floor), apply default, challenge.
+- Buy cover: threshold slider with the bound-cover histogram and capacity window, capacity meter,
+  debounced quote with a premium split rebuilt from the event's parameters (total is always the
+  contract quote), checks before signing (cutoff, capacity window, per-event share of the vault),
+  gas estimate, six-state transaction flow with decoded reverts.
+- My policies: tiles, per-policy status, inline threshold vs interval bar, claim and claim all.
+
+Checked in the browser against a live stack (Hardhat accounts standing in for MetaMask): bought
+cover on a seeded event, saw a decoded `EventShareExceeded` revert before the pre-check existed,
+advanced time, let the keeper and oracle nodes settle three events, watched the explorer update
+(interval, weights, money split, default pending), applied the default and claimed two policies;
+balance rose by 2 ETH. Real MetaMask has not been used.
+
+Known issues:
+
+- The block-based countdowns follow the chain's latest block time, which does not move on an idle
+  local chain until the presenter advances time.
+- Light theme not compared screen by screen yet (dark checked); polish is planned for M9.

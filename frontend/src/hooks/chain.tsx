@@ -109,7 +109,6 @@ export function ChainProvider({ children }: { children: ReactNode }) {
       }),
     [chainId, info.rpcUrl, info.key],
   );
-  useEffect(() => () => readProvider.destroy(), [readProvider]);
 
   // Wallet: restore an already-approved connection and follow account and chain changes.
   useEffect(() => {

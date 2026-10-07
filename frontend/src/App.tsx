@@ -13,6 +13,10 @@ import {
 } from "./hooks";
 import { weiToEth } from "./lib/format";
 import { Gallery } from "./screens/Gallery";
+import { Marketplace } from "./screens/Marketplace";
+import { Explorer } from "./screens/Explorer";
+import { Buy } from "./screens/Buy";
+import { Policies } from "./screens/Policies";
 
 type Theme = "light" | "dark";
 
@@ -154,9 +158,17 @@ function Layout() {
       <Routes>
         <Route path="/" element={<Navigate to="/markets" replace />} />
         {import.meta.env.DEV ? <Route path="/__components" element={<Gallery />} /> : null}
-        {ROUTES.map(([id, title]) => (
-          <Route key={id} path={`/${id}/*`} element={<Pending title={title} />} />
-        ))}
+        <Route path="/markets" element={<Marketplace />} />
+        <Route path="/explorer" element={<Explorer />} />
+        <Route path="/explorer/:id" element={<Explorer />} />
+        <Route path="/buy" element={<Buy />} />
+        <Route path="/buy/:id" element={<Buy />} />
+        <Route path="/policies" element={<Policies />} />
+        {ROUTES.filter(([id]) => !["markets", "explorer", "buy", "policies"].includes(id)).map(
+          ([id, title]) => (
+            <Route key={id} path={`/${id}/*`} element={<Pending title={title} />} />
+          ),
+        )}
         <Route path="*" element={<Navigate to="/markets" replace />} />
       </Routes>
     </AppShell>

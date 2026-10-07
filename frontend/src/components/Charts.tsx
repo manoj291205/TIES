@@ -313,6 +313,9 @@ export interface IntervalChartProps {
   tableToggle?: boolean;
   showTable?: boolean;
   xStep?: number;
+  /** Settlement cursors from the engine; when given they decide each bar's colour. */
+  payCursor?: number;
+  noPayCursor?: number;
   style?: CSSProperties;
 }
 
@@ -335,6 +338,8 @@ export function IntervalChart({
   tableToggle = true,
   showTable = false,
   xStep,
+  payCursor,
+  noPayCursor,
   style,
 }: IntervalChartProps) {
   const uid = useId().replace(/:/g, "");
@@ -372,7 +377,14 @@ export function IntervalChart({
   const OX = (v: number) => m.l + ((v - full[0]) / (full[1] - full[0])) * pw;
   const oy = H - 30;
   const oh = 18;
-  const stateOf = (b: ChartBucket) => bucketState(b.x, bs, L, U, state);
+  const stateOf = (b: ChartBucket): BucketState => {
+    if (payCursor != null && noPayCursor != null) {
+      if (b.x + bs - 1 <= payCursor) return "pay";
+      if (b.x >= noPayCursor) return "nopay";
+      return "held";
+    }
+    return bucketState(b.x, bs, L, U, state);
+  };
   const summary =
     `Collateral by threshold bucket. ` +
     (hasIv ? `Evidence interval ${L} to ${U} ${unit}, consensus ${V}. ` : "No interval yet. ") +
