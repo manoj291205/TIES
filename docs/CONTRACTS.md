@@ -121,7 +121,7 @@ The cost depends on the number of reports (at most 16) and sources, not on polic
 
 | Contract                | Bytes  |
 | ----------------------- | ------ |
-| `SettlementEngine`      | 23,256 |
+| `SettlementEngine`      | 23,918 |
 | `TIESRegistry`          | 14,463 |
 | `PolicyBook`            | 12,257 |
 | `LearningModule`        | 7,002  |
@@ -129,7 +129,7 @@ The cost depends on the number of reports (at most 16) and sources, not on polic
 | `Vault`                 | 3,976  |
 | `SignedAdapterVerifier` | 2,381  |
 
-The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 1.3 KB of
+The limit is 24,576 bytes. `test/sizes.test.ts` enforces it. The engine has about 0.6 KB of
 headroom, so escalation and learning live in separate contracts.
 
 ## API

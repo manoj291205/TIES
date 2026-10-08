@@ -2,7 +2,7 @@
 
 Generated from `experiments/results/summary.json` by `npm run experiments:report`. Do not edit by hand.
 
-Run: 2026-10-07T15:47:36.873Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 974 s.
+Run: 2026-10-08T06:49:21.824Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 645 s.
 
 ## Method
 
@@ -92,16 +92,16 @@ A baseline that never reaches its quorum leaves its policies unsettled, which th
 
 | Scenario              | TIES oracle gas | TIES settle gas (all rounds and default) | TIES settle gas per policy | Single oracle settleAll | 2-report average settleAll | 2-of-3 median settleAll | 7-oracle median settleAll |
 | --------------------- | --------------- | ---------------------------------------- | -------------------------- | ----------------------- | -------------------------- | ----------------------- | ------------------------- |
-| `honest`              | 684,714         | 1,221,145                                | 61,057                     | 223,497                 | 225,842                    | 240,250                 | 244,759                   |
-| `compromised-feed`    | 1,027,551       | 2,886,404                                | 144,320                    | 223,487                 | 223,244                    | 237,108                 | 244,495                   |
-| `two-keys-one-feed`   | 880,237         | 2,098,700                                | 104,935                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
-| `noisy-source`        | 823,642         | 1,865,845                                | 93,292                     | 223,366                 | 225,734                    | 240,029                 | 244,745                   |
-| `late-source`         | 724,968         | 1,991,175                                | 99,559                     | 223,433                 | 225,844                    | 239,843                 | n/a (never settled)       |
-| `silent-source`       | 726,926         | 1,976,588                                | 98,829                     | 223,466                 | 225,828                    | 239,787                 | n/a (never settled)       |
-| `unavailable-source`  | 672,144         | 1,999,692                                | 99,985                     | 223,389                 | 225,721                    | 239,689                 | n/a (never settled)       |
-| `borderline`          | 628,461         | 1,125,996                                | 56,300                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
-| `forged-report`       | 786,170         | 2,000,333                                | 100,017                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
-| `inconsistent-rounds` | 632,492         | 1,108,556                                | 55,428                     | 223,372                 | 225,850                    | 240,114                 | 243,602                   |
+| `honest`              | 684,709         | 1,231,752                                | 61,588                     | 223,497                 | 225,842                    | 240,250                 | 244,759                   |
+| `compromised-feed`    | 1,027,557       | 2,932,160                                | 146,608                    | 223,487                 | 223,244                    | 237,108                 | 244,495                   |
+| `two-keys-one-feed`   | 880,235         | 2,129,136                                | 106,457                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
+| `noisy-source`        | 823,644         | 1,894,172                                | 94,709                     | 223,366                 | 225,734                    | 240,029                 | 244,745                   |
+| `late-source`         | 724,972         | 2,026,959                                | 101,348                    | 223,433                 | 225,844                    | 239,843                 | n/a (never settled)       |
+| `silent-source`       | 726,924         | 2,011,367                                | 100,568                    | 223,466                 | 225,828                    | 239,787                 | n/a (never settled)       |
+| `unavailable-source`  | 672,144         | 2,032,426                                | 101,621                    | 223,389                 | 225,721                    | 239,689                 | n/a (never settled)       |
+| `borderline`          | 628,458         | 1,145,672                                | 57,284                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
+| `forged-report`       | 786,168         | 2,035,456                                | 101,773                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
+| `inconsistent-rounds` | 632,490         | 1,116,974                                | 55,849                     | 223,372                 | 225,850                    | 240,114                 | 243,602                   |
 
 ### Gas to bind one policy
 

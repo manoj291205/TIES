@@ -86,12 +86,20 @@ In a second terminal, start the web app:
 npm run dev:web
 ```
 
+Optionally, in a third terminal, watch the oracles and every transaction live:
+
+```bash
+npm run watch
+```
+
 Then:
 
 1. Open http://localhost:5173 and click **Connect MetaMask**. Approve adding and switching to
-   **Hardhat Localhost** (chain 31337, RPC `http://127.0.0.1:8545`).
-2. In MetaMask, import the accounts you want from the private keys the `node` process prints at
-   start-up: #0 admin, #1 liquidity provider, #4 policyholder. These are Hardhat's public test
+   **Hardhat Localhost** (chain 31337, RPC `http://127.0.0.1:8545`). The currency is test ETH on
+   your machine; nothing costs real money.
+2. Either press **Fund my wallet (100 ETH)** on the **Presenter** screen to use your own MetaMask
+   account, or import the demo accounts. `npm run accounts` prints them with their private keys:
+   #0 admin, #1 liquidity provider, #4 policyholder, #10 oracle. These are Hardhat's public test
    keys; use them only on this local chain.
 3. As #1, deposit into the **Vault**. As #4, go to **Events**, pick an event and **Buy cover**.
 4. On the **Presenter** screen, advance time past the observation window. The keeper and oracle
@@ -101,8 +109,8 @@ Then:
 After a reset from the Presenter screen, clear each account's activity in MetaMask
 (Settings > Advanced) so it does not reuse old nonces.
 
-[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) is a seven-minute walk-through with the account to use
-at each step. Scenarios can also run from the command line while the stack is up:
+[docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) explains every screen, MetaMask and the terminal view, and
+plans a live demo; [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) is a seven-minute cut of it. Scenarios can also run from the command line while the stack is up:
 
 ```bash
 npm run demo:cli -- --scenario compromised-feed
@@ -118,20 +126,22 @@ npm run build
 
 `npm test` runs the contract tests (including differential tests against the TypeScript reference
 in `packages/ties-math` and an end-to-end test of the services), the reference package tests and
-the frontend tests.
+the frontend tests. With the stack and the web app running, `npm run test:e2e` drives every screen
+of the website in a browser (see [docs/RUNNING.md](docs/RUNNING.md)).
 
 ## Documentation
 
-| Document                                         | Contents                                              |
-| ------------------------------------------------ | ----------------------------------------------------- |
-| [docs/RUNNING.md](docs/RUNNING.md)               | Services, ports, accounts, scenarios, configuration   |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)     | Components, event lifecycle, repository layout        |
-| [docs/CONTRACTS.md](docs/CONTRACTS.md)           | Contract API, events, gas and sizes                   |
-| [docs/SECURITY.md](docs/SECURITY.md)             | Threat model, edge cases, static analysis             |
-| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)       | Comparison with baseline designs, generated from runs |
-| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)       | A seven-minute live demo with MetaMask                |
-| [docs/DESIGN_MAPPING.md](docs/DESIGN_MAPPING.md) | Design placeholders mapped to contract calls          |
-| [PROGRESS.md](PROGRESS.md)                       | Milestone log                                         |
+| Document                                         | Contents                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| [docs/RUNNING.md](docs/RUNNING.md)               | Services, ports, accounts, scenarios, configuration          |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)     | Components, event lifecycle, repository layout               |
+| [docs/CONTRACTS.md](docs/CONTRACTS.md)           | Contract API, events, gas and sizes                          |
+| [docs/SECURITY.md](docs/SECURITY.md)             | Threat model, edge cases, static analysis                    |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md)       | Comparison with baseline designs, generated from runs        |
+| [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md)         | Using every screen, MetaMask, the terminal view, a demo plan |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)       | A seven-minute live demo with MetaMask                       |
+| [docs/DESIGN_MAPPING.md](docs/DESIGN_MAPPING.md) | Design placeholders mapped to contract calls                 |
+| [PROGRESS.md](PROGRESS.md)                       | Milestone log                                                |
 
 ## Repository layout
 

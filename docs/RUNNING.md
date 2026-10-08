@@ -34,7 +34,7 @@ npm run dev:stack
 | init        | -                                   | Deploys, exports ABIs, registers sources and oracles, seeds demo state, then exits. |
 | sources     | 7101-7109                           | Signed upstream sources S1-S9 (`/mcp`, `/control`, `/truth`).                       |
 | oracles     | http://127.0.0.1:7200/status        | Oracle nodes on keys #10-#17 (MCP client, commit, reveal).                          |
-| keeper      | -                                   | Opens rounds, finalizes rounds, applies defaults.                                   |
+| keeper      | http://127.0.0.1:7300/status        | Opens rounds, finalizes rounds, applies defaults. `POST /pause`, `POST /resume`.    |
 | demo server | http://127.0.0.1:7000               | Presenter API (REST and server-sent events), chain 31337 only.                      |
 
 `npm run dev:stack` compiles the contracts first. Stop everything with Ctrl+C.
@@ -56,6 +56,9 @@ Hardhat's standard development accounts (publicly known keys, local use only):
 | #10-#17  | oracle nodes                      |
 | #18      | challenger                        |
 | #19      | spare                             |
+
+`npm run accounts` prints the demo accounts with their roles, addresses and private keys for
+importing into MetaMask (`npm run accounts -- --all` for all twenty).
 
 Source signer keys are generated on first use and kept in `services/.keys/sources.json`
 (gitignored).
@@ -109,19 +112,35 @@ curl -X POST http://127.0.0.1:7200/nodes/n2/mode -H "content-type: application/j
 
 ### Demo server
 
-| Method and path                | What it does                                                      |
-| ------------------------------ | ----------------------------------------------------------------- |
-| `GET /health`, `/state`        | Liveness, deployment, chain time and block.                       |
-| `GET /accounts`                | Role to address map for the presenter.                            |
-| `POST /reset`                  | Redeploy and seed.                                                |
-| `POST /seed`                   | Add the demo events again.                                        |
-| `POST /time/advance {seconds}` | `evm_increaseTime` then `evm_mine`.                               |
-| `POST /mine {blocks}`          | Mine blocks.                                                      |
-| `POST /sources/:id/mode`       | Proxy to a source's `/control` (id `S2` or `2`).                  |
-| `POST /nodes/:id/mode`         | Set an oracle node mode. `/nodes/:id/start` and `/stop` too.      |
-| `GET /scenarios`               | Scenario list.                                                    |
-| `POST /scenarios/:name/run`    | Runs a scenario; streams steps, transactions and rounds over SSE. |
-| `GET /experiments/latest`      | Experiment results (available once the experiments exist).        |
+| Method and path                 | What it does                                                      |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `GET /health`, `/state`         | Liveness, deployment, chain time and block.                       |
+| `GET /accounts`                 | Role to address map for the presenter.                            |
+| `POST /reset`                   | Redeploy and seed.                                                |
+| `POST /seed`                    | Add the demo events again.                                        |
+| `POST /time/advance {seconds}`  | `evm_increaseTime` then `evm_mine`.                               |
+| `POST /mine {blocks}`           | Mine blocks.                                                      |
+| `POST /fund {address?}`         | 10,000 ETH to accounts #0-#19, or 100 ETH to one given address.   |
+| `GET /keeper`                   | Keeper status (paused or running) and its last actions.           |
+| `POST /keeper/pause`, `/resume` | Pause the keeper to open and settle rounds by hand.               |
+| `POST /sources/:id/mode`        | Proxy to a source's `/control` (id `S2` or `2`).                  |
+| `POST /nodes/:id/mode`          | Set an oracle node mode. `/nodes/:id/start` and `/stop` too.      |
+| `GET /scenarios`                | Scenario list.                                                    |
+| `POST /scenarios/:name/run`     | Runs a scenario; streams steps, transactions and rounds over SSE. |
+| `GET /experiments/latest`       | Experiment results (available once the experiments exist).        |
+
+### Live view in the terminal
+
+```bash
+npm run watch
+```
+
+Prints every transaction to the TIES contracts as blocks arrive: the sender's role and nonce, the
+decoded call, its events and gas, and what each oracle node does off chain (calling its source
+over MCP, committing, revealing, failing). When a round opens it lists the committee with each
+oracle's next nonce; when it closes it prints V, sigma, N_eff, [L, U], the cursors and the money
+moved. `npm run watch -- --oracles` keeps only the oracle rounds. It is read-only and follows a
+reset by itself.
 
 ### Scenarios from the command line
 
@@ -196,6 +215,22 @@ npm run experiments:report
 
 The first command runs every scenario against TIES and the four baselines on an in-process Hardhat
 network (several minutes); the next two render `docs/figures/` and `docs/EXPERIMENTS.md`.
+
+## End-to-end tests of the web app
+
+With `npm run dev:stack` and `npm run dev:web` running:
+
+```bash
+npm run test:e2e
+```
+
+The suite resets the local chain, then drives every screen in Microsoft Edge (or Chrome with
+`E2E_BROWSER=chrome`) through an injected wallet that signs as the demo accounts. It covers
+wallet connection and network switching, navigation, filters, deposits and withdrawals, buying
+cover, opening and settling rounds by hand, challenges and disputes, defaults, claims, the
+operator console, the admin registry, the presenter, the transaction log and every lab scenario.
+A report is written to `e2e-report/` (not committed). `E2E_FULL=1` adds the 15-minute experiment
+run from the lab.
 
 ## Static analysis
 

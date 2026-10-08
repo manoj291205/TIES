@@ -398,3 +398,42 @@ Known issues:
 - D16 decided: binding gas is left as is and documented with a measured breakdown in
   `docs/CONTRACTS.md` (about 105k of each bind is the parameter read; the rest is the collateral
   index, the capacity query and storage).
+
+### Website test pass, MetaMask, terminal view, demo guide
+
+- `npm run test:e2e` (Playwright, `e2e/`): 42 tests drive every screen of the website in Edge or
+  Chrome against the running local stack, through an injected wallet that behaves like MetaMask.
+  They cover connecting and network switching, navigation, theme, filters, vault deposit and
+  withdrawal, buying cover and its checks, opening and settling rounds by hand, challenge and
+  dispute resolution, defaults, single and bulk claims, the operator console's manual commit and
+  reveal, the admin registry, the presenter controls, the transaction log and all eleven lab
+  scenarios. All pass on a fresh stack.
+- Bugs found and fixed:
+  - Escalation re-recruited a committee member that had committed and withheld its reveal
+    (late or silent), wasting the remaining rounds; the `late-source` scenario ended DISPUTED.
+    The engine now treats such members as already used (decision D17); members that never
+    committed stay eligible. Two contract tests added.
+  - Settlement explorer before round 1: the axis read the engine's bucket count, which is 0
+    until a round opens ("Full 0–-1", a negative-width bar). It now reads the event's parameters.
+  - Explorer, round 1: the panel said "Escalation requested" and counted commits against the
+    wrong total (3 / 1); it now shows the round's committee and its size. Buckets before any
+    evidence read "Awaiting evidence" instead of "Held".
+  - Operator console without a wallet had no page header; missing favicon logged a 404 on every
+    page; the transaction log did not say which event it was filtered to.
+  - Presenter reset left every screen on the old contract addresses until a manual reload; it now
+    reloads by itself.
+- MetaMask: Connect now also switches (or adds) the network; clear advice for MetaMask's stale
+  nonce and block errors after a chain restart. Currency is test ETH on chain 31337.
+  `npm run accounts` prints the demo accounts and keys to import; **Fund my wallet** on the
+  Presenter screen gives any connected account 100 ETH.
+- Keeper control: pause and resume from the Presenter screen (keeper endpoint on 7300, proxied by
+  the demo server) so rounds can be opened and settled by hand during a demo.
+- `npm run watch`: live terminal view of every transaction with the sender's role and nonce,
+  decoded calls and events, the oracle nodes' off-chain steps (MCP fetch, commit, reveal) and
+  each round's result.
+- The lab's "wrong settlements" check now counts what the evidence decided; policies left to the
+  default rule are reported next to it (the default settles at the last consensus value and can
+  go either way a few units from the truth).
+- Docs: `docs/DEMO_GUIDE.md` (MetaMask, every screen, the terminal view, a demo plan,
+  troubleshooting); `DEMO_SCRIPT.md`, `RUNNING.md` and the README updated. Experiments re-run on
+  the changed contract (rates unchanged, gas figures regenerated); screenshots refreshed.
