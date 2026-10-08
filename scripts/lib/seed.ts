@@ -38,7 +38,7 @@ export interface SeedEvent {
   policies: { holder: number; bucket: number; payout: string }[];
 }
 
-/** Demo events (CLAUDE.md section 6, M4): three flights and one rainfall event on a real past date. */
+/** Demo events (build plan, M4): three flights and one rainfall event on a real past date. */
 export const DEMO_EVENTS: SeedEvent[] = [
   {
     category: 0,

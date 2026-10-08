@@ -120,7 +120,7 @@ export const sourceByKey = (key: string): SourceDef => {
   return found;
 };
 
-/** Hardhat account indices by role (CLAUDE.md section 4). */
+/** Hardhat account indices by role (see docs/RUNNING.md). */
 export const ACCOUNTS = {
   admin: 0,
   lps: [1, 2, 3],

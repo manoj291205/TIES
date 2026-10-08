@@ -89,9 +89,21 @@ escalate (planner call and committee storage) and rounds that finish the event (
 (6,000,000), callers of `finalizeRound`, `applyDefault` and `resolveDispute` should send
 `estimateGas` plus a margin rather than a fixed limit.
 
-Binding is the expensive user step: it reads the event's parameter version from the registry
-(including the curve and z arrays), checks the capacity window on the Fenwick tree and writes the
-tree. The experiments compare it with the baselines in [EXPERIMENTS.md](EXPERIMENTS.md).
+Binding is the expensive user step. Measured on one event (deployment defaults):
+
+| Bind                                     | Gas     |
+| ---------------------------------------- | ------- |
+| First policy on the event                | 523,987 |
+| Another policy in an already used bucket | 352,987 |
+| First policy in a new bucket             | 453,184 |
+
+About 105,000 of every bind is reading the event's full parameter version from the registry
+(including the curve and z arrays). The rest is writing the Fenwick tree (most expensive when its
+nodes are still empty), the capacity range query, the policy record and the vault calls. Caching
+the few parameters `bind` needs in the policy book when the event is created would save most of
+the parameter read; it is not done, because a TIES bind would still cost several times a baseline
+bind, which stores only the policy. The experiments compare both in
+[EXPERIMENTS.md](EXPERIMENTS.md).
 
 ### `finalizeRound` does not grow with the number of policies
 

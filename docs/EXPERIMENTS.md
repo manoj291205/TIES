@@ -2,7 +2,7 @@
 
 Generated from `experiments/results/summary.json` by `npm run experiments:report`. Do not edit by hand.
 
-Run: 2026-10-07T13:46:56.796Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 654 s.
+Run: 2026-10-07T15:47:36.873Z, 100 events x 20 policies per scenario, sweeps of 30 events, seed 1, 0.4 ETH payout per policy, hardhat in-process, chain 31337. Elapsed 974 s.
 
 ## Method
 
@@ -92,16 +92,16 @@ A baseline that never reaches its quorum leaves its policies unsettled, which th
 
 | Scenario              | TIES oracle gas | TIES settle gas (all rounds and default) | TIES settle gas per policy | Single oracle settleAll | 2-report average settleAll | 2-of-3 median settleAll | 7-oracle median settleAll |
 | --------------------- | --------------- | ---------------------------------------- | -------------------------- | ----------------------- | -------------------------- | ----------------------- | ------------------------- |
-| `honest`              | 684,784         | 1,220,962                                | 61,048                     | 223,497                 | 225,842                    | 240,250                 | 244,759                   |
-| `compromised-feed`    | 1,027,660       | 2,886,011                                | 144,301                    | 223,487                 | 223,244                    | 237,108                 | 244,495                   |
-| `two-keys-one-feed`   | 880,325         | 2,098,410                                | 104,921                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
-| `noisy-source`        | 823,730         | 1,865,590                                | 93,279                     | 223,366                 | 225,734                    | 240,029                 | 244,745                   |
-| `late-source`         | 725,081         | 1,990,936                                | 99,547                     | 223,433                 | 225,844                    | 239,843                 | n/a (never settled)       |
-| `silent-source`       | 727,036         | 1,976,350                                | 98,817                     | 223,466                 | 225,828                    | 239,787                 | n/a (never settled)       |
-| `unavailable-source`  | 672,213         | 1,999,450                                | 99,973                     | 223,389                 | 225,721                    | 239,689                 | n/a (never settled)       |
-| `borderline`          | 628,522         | 1,125,839                                | 56,292                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
-| `forged-report`       | 786,263         | 2,000,094                                | 100,005                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
-| `inconsistent-rounds` | 632,556         | 1,108,397                                | 55,420                     | 223,372                 | 225,850                    | 240,114                 | 243,602                   |
+| `honest`              | 684,714         | 1,221,145                                | 61,057                     | 223,497                 | 225,842                    | 240,250                 | 244,759                   |
+| `compromised-feed`    | 1,027,551       | 2,886,404                                | 144,320                    | 223,487                 | 223,244                    | 237,108                 | 244,495                   |
+| `two-keys-one-feed`   | 880,237         | 2,098,700                                | 104,935                    | 223,360                 | 225,776                    | 239,910                 | 244,625                   |
+| `noisy-source`        | 823,642         | 1,865,845                                | 93,292                     | 223,366                 | 225,734                    | 240,029                 | 244,745                   |
+| `late-source`         | 724,968         | 1,991,175                                | 99,559                     | 223,433                 | 225,844                    | 239,843                 | n/a (never settled)       |
+| `silent-source`       | 726,926         | 1,976,588                                | 98,829                     | 223,466                 | 225,828                    | 239,787                 | n/a (never settled)       |
+| `unavailable-source`  | 672,144         | 1,999,692                                | 99,985                     | 223,389                 | 225,721                    | 239,689                 | n/a (never settled)       |
+| `borderline`          | 628,461         | 1,125,996                                | 56,300                     | 219,254                 | 222,855                    | 237,185                 | 242,511                   |
+| `forged-report`       | 786,170         | 2,000,333                                | 100,017                    | 223,451                 | 223,244                    | 240,336                 | 245,789                   |
+| `inconsistent-rounds` | 632,492         | 1,108,556                                | 55,428                     | 223,372                 | 225,850                    | 240,114                 | 243,602                   |
 
 ### Gas to bind one policy
 
@@ -124,12 +124,12 @@ TIES pays for the threshold index and the capacity checks at binding time; the b
 
 | Policies | TIES finalizeRound | TIES applyDefault | Single oracle | 2-report average | 2-of-3 median | 7-oracle median |
 | -------- | ------------------ | ----------------- | ------------- | ---------------- | ------------- | --------------- |
-| 10       | 549,700            | 518,327           | 190,038       | 192,381          | 206,934       | 210,803         |
-| 50       | 527,162            | 479,736           | 476,516       | 478,653          | 493,006       | 499,105         |
-| 100      | 537,043            | 473,912           | 898,466       | 900,603          | 915,156       | 921,178         |
-| 250      | 535,362            | 494,418           | 2,164,316     | 2,166,659        | 2,181,495     | 2,185,487       |
-| 500      | 527,409            | 493,492           | 4,273,654     | 4,276,409        | 4,290,473     | 4,295,160       |
-| 1000     | 529,295            | 470,888           | 8,492,948     | 8,495,703        | 8,510,185     | 8,515,678       |
+| 10       | 549,766            | 518,415           | 190,038       | 192,381          | 206,934       | 210,803         |
+| 50       | 527,228            | 479,824           | 476,516       | 478,653          | 493,006       | 499,105         |
+| 100      | 537,109            | 474,000           | 898,466       | 900,603          | 915,156       | 921,178         |
+| 250      | 535,428            | 494,506           | 2,164,316     | 2,166,659        | 2,181,495     | 2,185,487       |
+| 500      | 527,475            | 493,580           | 4,273,654     | 4,276,409        | 4,290,473     | 4,295,160       |
+| 1000     | 529,361            | 470,976           | 8,492,948     | 8,495,703        | 8,510,185     | 8,515,678       |
 
 At 1000 policies the single-oracle baseline costs 8,492,948 gas, about 8,493 gas per policy. Extrapolated linearly (not measured), it would reach the 30,000,000 block gas limit at about 3,532 policies. No baseline exceeded the limit in the measured range.
 

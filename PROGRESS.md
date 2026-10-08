@@ -108,7 +108,7 @@ learning, silent penalty, randomised checks (k never above k_round, rounds never
 recruits never on a represented source). `finalizeRound` gas is identical at 10 and 1,000
 policies (546,861).
 
-Interpretation calls to review (see `.claude/OPEN_QUESTIONS.md`, D2 and D4-D6):
+Interpretation calls to review (decision log D2 and D4-D6):
 
 - D2: a default after rounds that never reached N_min settles at the last consensus.
 - D4: for held ranges wider than 64 buckets the planner scans the 64 buckets around the
@@ -381,3 +381,20 @@ Known issues:
 - D16 (owner): TIES binding gas (about 378k against about 89k for the baselines) is reported as
   measured. It is not optimised, pending the owner's answer.
 - The production bundle is about 660 kB (one chunk); fine for a local app.
+
+### Final audit (checkpoint)
+
+- Hygiene: commit history and tracked files are clean; two comments and one note that named
+  private planning files were reworded. Repository is private; all tags m0 to m9 are on the remote.
+- The parameters match the specification table; all claim-critical elements and properties are
+  present and tested; differential tests compare the contracts with `ties-math`.
+- Experiments re-run on the final contracts: only gas moved (about 0.02%); every rate is
+  unchanged. `docs/EXPERIMENTS.md` and the figures are regenerated.
+- Full cycle through the web app on a fresh local stack: LP deposit, buy cover, oracle round,
+  default, claim. Screenshots in `docs/screenshots/`, used in the README. The wallet was an
+  injected EIP-1193 provider on the local node (the same interface MetaMask provides); a manual
+  run in the MetaMask extension is still worth doing once.
+- No horizontal overflow at 1280 px in light or dark on any route.
+- D16 decided: binding gas is left as is and documented with a measured breakdown in
+  `docs/CONTRACTS.md` (about 105k of each bind is the parameter read; the rest is the collateral
+  index, the capacity query and storage).
