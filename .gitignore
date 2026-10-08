@@ -22,3 +22,7 @@ experiments/results/raw/
 *.log
 
 frontend/src/contracts/deployments/31337.json
+
+# End-to-end test output
+e2e-report/
+e2e-results/
