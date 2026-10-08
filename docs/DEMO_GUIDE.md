@@ -100,7 +100,8 @@ account holds, read from the contracts.
 - **Operator console** (oracle accounts #10 to #17): the source the key reads, its MCP endpoint,
   reputation, and an inbox of rounds. **Fetch and commit** asks the source for a signed report
   and commits to it; **Reveal** opens it after the commit window. The oracle node service does
-  the same thing automatically; stop that node on the Presenter screen to do it by hand.
+  the same thing automatically; stop the nodes that use the key on the Presenter screen to do it
+  by hand (key #10 is used by n1 and n9, key #11 by n2 and n10).
 - **Registry & params** (admin #0): category parameters (saving creates a new version; existing
   events keep theirs), sources and their activation, the oracle allowlist and committee flag,
   and **Create event**.
@@ -186,8 +187,9 @@ ENGINE holder1 #4 nonce 6  SettlementEngine.finalizeRound(1)  541,849 gas ✔  0
 ### Optional: settle by hand
 
 On **Presenter** press **Pause keeper**. The explorer then needs you to press **Open round 1**
-and **Settle now** yourself, and on a pending default **Apply default**. Stop a node (for example
-n1) and use account #10 in the **Operator console** to **Fetch and commit** and **Reveal**.
+and **Settle now** yourself, and on a pending default **Apply default**. Stop nodes n1 and n9 (both
+send from key #10) and use account #10 in the **Operator console** to **Fetch and commit** and
+**Reveal**; start them again afterwards.
 Press **Resume keeper** afterwards. (The lab resumes it by itself when you run a scenario.)
 
 ### Optional: a dispute

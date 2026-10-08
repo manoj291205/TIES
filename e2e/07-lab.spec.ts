@@ -20,7 +20,7 @@ test.describe("live demo lab", () => {
   for (const [label, name] of SCENARIOS) {
     test(`runs the ${name} scenario with real transactions`, async ({ browser }) => {
       test.setTimeout(300_000);
-      const runsBefore = (await demo<unknown[]>("GET", "/runs")).length;
+      const started = new Date().toISOString();
       const o = await openAs(browser, ACCOUNT.admin, "lab");
       await o.page.getByRole("button", { name: label, exact: true }).click();
       await o.page.getByRole("button", { name: "Run", exact: true }).click();
@@ -32,7 +32,11 @@ test.describe("live demo lab", () => {
       await expect(o.page.getByText("As expected", { exact: true })).toBeVisible();
       await expect(o.page.getByText(/Event ended/)).toBeVisible();
       expect(await o.page.getByText("Fail", { exact: true }).count()).toBe(0);
-      expect((await demo<unknown[]>("GET", "/runs")).length).toBe(runsBefore + 1);
+      // The run history (newest first, last 50 kept) records this run.
+      const [latest] = await demo<{ at: string; scenario: string; ok: boolean }[]>("GET", "/runs");
+      expect(latest.scenario).toBe(name);
+      expect(latest.ok).toBe(true);
+      expect(latest.at >= started).toBe(true);
       expectNoErrors(o);
       await o.close();
     });
