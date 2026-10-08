@@ -18,7 +18,9 @@ import {
 } from "../packages/ties-math/src";
 import { createFlightEvent, eth, makeRng, FLIGHT_DELAY } from "./helpers/deploy";
 import {
+  SALT,
   bindPolicy,
+  commitHash,
   deployEngine,
   findLogs,
   milli,
@@ -27,6 +29,7 @@ import {
   playCurrentRound,
   playUntilSettled,
   Responder,
+  signReport,
 } from "./helpers/engine";
 
 const Status = { NONE: 0, COMMIT: 1, REVEAL: 2, DEFAULT_PENDING: 3, DISPUTED: 4, FINAL: 5 };
@@ -217,6 +220,45 @@ describe("Escalation, recruitment and learning", () => {
       expect(st.round).to.be.lte(3);
       expect(st.status).to.equal(Status.FINAL);
       expect(await stack.vault.locked()).to.equal(0n);
+    });
+
+    it("does not recruit again an oracle that committed and withheld its reveal", async () => {
+      const stack = await build(
+        [prim(1), prim(2), prim(3), cand(4)],
+        [
+          { holder: "alice", bucket: 60, payout: eth("1") },
+          { holder: "bob", bucket: 200, payout: eth("3") },
+        ],
+      );
+      const { engine, eventId, oracles, sourceWallets } = stack;
+      // The oracle on S3 commits in round 1 and never reveals (late or withholding).
+      const withheld = await signReport(stack, sourceWallets[2], eventId, milli(131));
+      await engine
+        .connect(oracles[2])
+        .commit(eventId, 1, commitHash(withheld, SALT, oracles[2].address));
+      const receipt = await playCurrentRound(stack, eventId, bySource({ 1: 128, 2: 130 }));
+      expect(findLogs(stack, receipt, "RoundFinalized")[0].args.status).to.equal(
+        Outcome.INSUFFICIENT,
+      );
+      const selected = [...findLogs(stack, receipt, "EscalationRequested")[0].args.selected];
+      expect(selected).to.not.include(oracles[2].address);
+      expect(selected).to.deep.equal([oracles[3].address]);
+
+      await playUntilSettled(stack, eventId, bySource({ 4: 129 }));
+      expect((await engine.eventState(eventId)).status).to.equal(Status.FINAL);
+    });
+
+    it("still recruits an oracle that never committed (its node may have been down)", async () => {
+      const stack = await build(
+        [prim(1), prim(2), prim(3)],
+        [
+          { holder: "alice", bucket: 60, payout: eth("1") },
+          { holder: "bob", bucket: 200, payout: eth("3") },
+        ],
+      );
+      const receipt = await playCurrentRound(stack, stack.eventId, bySource({ 1: 128, 2: 130 }));
+      const selected = [...findLogs(stack, receipt, "EscalationRequested")[0].args.selected];
+      expect(selected).to.deep.equal([stack.oracles[2].address]);
     });
 
     it("gives up on a margin that more sources cannot close (futility) and defaults", async () => {

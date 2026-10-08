@@ -21,6 +21,7 @@ export interface PlanInput {
   nEff: bigint; // WAD
   sourceIds: number[];
   sourceWeights: bigint[]; // WAD, one per represented source
+  /** Oracles not to recruit: those that reported, and committee members that committed and withheld their reveal. */
   reporters: string[];
   /** Collateral per bucket, indexed by bucket number. */
   bucketAmounts: (bucket: number) => bigint;

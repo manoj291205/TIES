@@ -36,7 +36,7 @@ contract EscalationPlanner {
         uint256 nEff; // WAD
         uint32[] sourceIds; // distinct sources already represented
         uint256[] sourceWeights; // total report weight per represented source (WAD)
-        address[] reporters; // oracles that already reported on this event
+        address[] reporters; // oracles that reported, or committed and withheld, on this event
     }
 
     /// @param registry_ The registry.

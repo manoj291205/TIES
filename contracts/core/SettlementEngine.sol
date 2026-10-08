@@ -771,13 +771,12 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
         in_.consensus = r.consensus;
         in_.sigma = r.sigma;
         in_.nEff = r.nEff;
-        in_.reporters = new address[](n);
+        in_.reporters = _usedOracles(eventId, st.round, reports);
 
         uint32[] memory ids = new uint32[](n);
         uint256[] memory weights = new uint256[](n);
         uint256 distinct;
         for (uint256 i = 0; i < n; i++) {
-            in_.reporters[i] = reports[i].oracle;
             uint256 slot = distinct;
             for (uint256 j = 0; j < distinct; j++) {
                 if (ids[j] == reports[i].sourceId) {
@@ -797,6 +796,39 @@ contract SettlementEngine is AccessControl, ReentrancyGuard, ISettlementEngine {
             in_.sourceIds[j] = ids[j];
             in_.sourceWeights[j] = weights[j];
         }
+    }
+
+    /// @dev Oracles the planner must not recruit again: every oracle that revealed a report, and
+    ///      every committee member that committed in an earlier round and then withheld its reveal
+    ///      (re-recruiting it would only spend another round; a withholding oracle could otherwise
+    ///      stall the event until the round limit). A member that never committed stays eligible.
+    function _usedOracles(
+        uint256 eventId,
+        uint8 rounds,
+        Report[] storage reports
+    ) private view returns (address[] memory out) {
+        uint256 bound = reports.length;
+        for (uint8 r = 1; r <= rounds; r++) bound += _committee[eventId][r].length;
+        address[] memory tmp = new address[](bound);
+        uint256 count;
+        for (uint256 i = 0; i < reports.length; i++) tmp[count++] = reports[i].oracle;
+        for (uint8 r = 1; r <= rounds; r++) {
+            address[] storage members = _committee[eventId][r];
+            for (uint256 i = 0; i < members.length; i++) {
+                address who = members[i];
+                if (_reported[eventId][who] || _commits[eventId][r][who] == bytes32(0)) continue;
+                bool seen;
+                for (uint256 j = 0; j < count; j++) {
+                    if (tmp[j] == who) {
+                        seen = true;
+                        break;
+                    }
+                }
+                if (!seen) tmp[count++] = who;
+            }
+        }
+        out = new address[](count);
+        for (uint256 i = 0; i < count; i++) out[i] = tmp[i];
     }
 
     /// @dev Marks the event final and lets reputation and dependence learn from the outcome.
