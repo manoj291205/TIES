@@ -137,6 +137,33 @@ export function decodeError(err: unknown, interfaces: Interface[]): DecodedError
     }
   }
   const fallback = e?.reason ?? e?.shortMessage ?? e?.message ?? "The transaction failed.";
+  // MetaMask keeps its own nonce and block cache; after the local chain restarts it goes stale.
+  const all = `${fallback} ${JSON.stringify(err, (_k, v) => (typeof v === "bigint" ? String(v) : v)) ?? ""}`;
+  if (
+    /nonce too (high|low)|invalid nonce|invalid block tag|block number .* (is )?(higher|greater)/i.test(
+      all,
+    )
+  ) {
+    return {
+      message:
+        "MetaMask's saved history is from an older run of the local chain. In MetaMask open Settings › Advanced › Clear activity tab data, then try again.",
+      raw: fallback.split("\n")[0].slice(0, 240),
+      name: null,
+      rejected: false,
+    };
+  }
+  if (
+    /chain ?id|chainId|unsupported network/i.test(all) &&
+    /mismatch|does not match|wrong/i.test(all)
+  ) {
+    return {
+      message:
+        "MetaMask is on a different network. Switch it to Hardhat Localhost (31337) and try again.",
+      raw: fallback.split("\n")[0].slice(0, 240),
+      name: null,
+      rejected: false,
+    };
+  }
   return {
     message: fallback.split("\n")[0].slice(0, 240),
     raw: "unknown error",

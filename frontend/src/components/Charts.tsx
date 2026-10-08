@@ -753,7 +753,11 @@ export function IntervalChart({
                 </td>
                 <td className="num">{fmtEth(b.amount)}</td>
                 <td>
-                  <StatusChip status={stateOf(b) as StatusKey} />
+                  <StatusChip
+                    status={
+                      (!hasIv && stateOf(b) === "held" ? "awaiting" : stateOf(b)) as StatusKey
+                    }
+                  />
                 </td>
                 <td>{b.mine ? "Yes" : "—"}</td>
               </tr>

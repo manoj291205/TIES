@@ -80,6 +80,26 @@ const readStored = (): number | null => {
   }
 };
 
+/** Ask the wallet to switch to `target`, adding the network first when the wallet does not know it. */
+async function requestChain(eth: Eip1193, target: number): Promise<void> {
+  const next = networkOf(target);
+  if (!next) throw new Error(`Chain ${target} is not supported.`);
+  try {
+    await eth.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: toHexChainId(target) }],
+    });
+  } catch (err) {
+    const e = err as { code?: number; data?: { originalError?: { code?: number } } };
+    // 4902: unknown chain (MetaMask on mobile wraps it in -32603).
+    if (e.code === 4902 || e.code === -32603 || e.data?.originalError?.code === 4902) {
+      await eth.request({ method: "wallet_addEthereumChain", params: [addChainParams(next)] });
+    } else {
+      throw err;
+    }
+  }
+}
+
 function agoText(ms: number): string {
   const s = Math.floor(ms / 1000);
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m`;
@@ -194,10 +214,20 @@ export function ChainProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(async () => {
     if (!eth) throw new Error("MetaMask was not found in this browser.");
     const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
-    const chain = (await eth.request({ method: "eth_chainId" })) as string;
+    let chain = Number((await eth.request({ method: "eth_chainId" })) as string);
     setAccount(accounts[0] ?? null);
-    setWalletChainId(Number(chain));
-  }, [eth]);
+    setWalletChainId(chain);
+    // Put the wallet on the network the app is showing, adding the network if MetaMask lacks it.
+    if (chain !== preferred) {
+      try {
+        await requestChain(eth, preferred);
+        chain = Number((await eth.request({ method: "eth_chainId" })) as string);
+        setWalletChainId(chain);
+      } catch {
+        /* declined: the wrong-network banner offers the switch again */
+      }
+    }
+  }, [eth, preferred]);
 
   const switchNetwork = useCallback(
     async (target: number) => {
@@ -210,21 +240,7 @@ export function ChainProvider({ children }: { children: ReactNode }) {
         /* storage unavailable */
       }
       if (!eth || !account) return;
-      try {
-        await eth.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: toHexChainId(target) }],
-        });
-      } catch (err) {
-        if (
-          (err as { code?: number }).code === 4902 ||
-          (err as { code?: number }).code === -32603
-        ) {
-          await eth.request({ method: "wallet_addEthereumChain", params: [addChainParams(next)] });
-        } else {
-          throw err;
-        }
-      }
+      await requestChain(eth, target);
     },
     [eth, account],
   );

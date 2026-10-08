@@ -254,6 +254,11 @@ function ExplorerFor({ eventId }: { eventId: number }) {
     (a) => sources.get(escSources[a.toLowerCase()])?.name ?? a.slice(0, 8),
   );
   const roundOpened = opened.filter((o) => view && num(o.args.round) === view.round).at(-1);
+  const committee = (roundOpened?.args.committee as string[] | undefined) ?? [];
+  const committeeSources = useOracleSources(committee, row?.category);
+  const committeeNames = committee.map(
+    (a) => sources.get(committeeSources[a.toLowerCase()])?.name ?? a.slice(0, 8),
+  );
   const commitsIn = view ? committed.filter((c) => num(c.args.round) === view.round).length : 0;
 
   // Settle now.
@@ -532,7 +537,9 @@ function ExplorerFor({ eventId }: { eventId: number }) {
                 round={view.round}
                 held={weiToEth(view.held)}
                 trigger={params ? weiToEth(params.uMin) : 0}
-                sources={escNames.length ? escNames : ["scheduled committee"]}
+                escalated={esc != null}
+                sources={esc ? escNames : committeeNames}
+                expected={committee.length || undefined}
                 phase={view.status === "ROUND_COMMIT" ? "commit" : "reveal"}
                 commit={[fmtDuration(Math.max(0, view.commitDeadline - now)), "until reveal opens"]}
                 reveal={[

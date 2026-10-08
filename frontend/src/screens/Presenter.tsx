@@ -63,6 +63,7 @@ export function Presenter() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [sources, setSources] = useState<SourceRow[]>([]);
   const [nodes, setNodes] = useState<NodeRow[]>([]);
+  const [keeper, setKeeper] = useState<{ paused: boolean } | null>(null);
   const [seconds, setSeconds] = useState("300");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -85,6 +86,9 @@ export function Presenter() {
     demoGet<{ nodes: NodeRow[] }>("/nodes")
       .then((s) => setNodes(s.nodes))
       .catch(() => undefined);
+    demoGet<{ paused: boolean }>("/keeper")
+      .then(setKeeper)
+      .catch(() => setKeeper(null));
   }, [tick, block?.number]);
 
   if (info.key !== "local")
@@ -143,7 +147,13 @@ export function Presenter() {
             <div className="ties-row">
               <Button
                 variant="danger"
-                onClick={() => void act("Reset and redeploy", () => demoPost("/reset"))}
+                onClick={() =>
+                  void act("Reset and redeploy", async () => {
+                    await demoPost("/reset");
+                    // New contract addresses: reload so every screen reads the new deployment.
+                    window.location.reload();
+                  })
+                }
               >
                 Reset and redeploy
               </Button>
@@ -159,11 +169,52 @@ export function Presenter() {
               >
                 Fund accounts (10,000 ETH)
               </Button>
+              <Button
+                variant="secondary"
+                disabled={!account}
+                onClick={() =>
+                  void act("Fund my wallet", () => demoPost("/fund", { address: account }))
+                }
+              >
+                Fund my wallet (100 ETH)
+              </Button>
             </div>
             <p className="ties-field__hint">
-              Reset redeploys the contracts; the web app needs a reload to pick up the new
-              addresses.
+              Reset redeploys the contracts and reloads this page. In MetaMask, clear each
+              account&apos;s activity tab data afterwards (Settings › Advanced).
             </p>
+          </Panel>
+          <Panel
+            title="Keeper"
+            icon="bolt"
+            badge={
+              keeper ? (
+                <StatusChip
+                  status={keeper.paused ? "held" : "confirmed"}
+                  label={keeper.paused ? "Paused" : "Running"}
+                />
+              ) : (
+                <StatusChip status="stopped" label="Unreachable" />
+              )
+            }
+          >
+            <p className="ties-muted" style={{ margin: 0 }}>
+              The keeper opens rounds, finalizes them and applies defaults when they are due. Pause
+              it to press those buttons yourself in the Settlement explorer.
+            </p>
+            <div className="ties-row" style={{ marginTop: 12 }}>
+              <Button
+                variant="secondary"
+                disabled={!keeper}
+                onClick={() =>
+                  void act(keeper?.paused ? "Resume keeper" : "Pause keeper", () =>
+                    demoPost(keeper?.paused ? "/keeper/resume" : "/keeper/pause"),
+                  )
+                }
+              >
+                {keeper?.paused ? "Resume keeper" : "Pause keeper"}
+              </Button>
+            </div>
           </Panel>
           <Panel title="Time" icon="clock">
             <SegmentedControl

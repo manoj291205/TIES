@@ -172,7 +172,20 @@ export function Operator() {
   };
 
   if (!account)
-    return <EmptyState title="Connect a wallet to open the operator console" icon="wallet" />;
+    return (
+      <>
+        <PageHeader
+          eyebrow="Oracle"
+          title="Operator console"
+          subtitle="For oracle keys registered by the admin (accounts #10 to #17 on the local chain)."
+        />
+        <EmptyState
+          title="Connect a wallet to open the operator console"
+          body="Import an oracle account into MetaMask (npm run accounts lists them) and connect."
+          icon="wallet"
+        />
+      </>
+    );
 
   const history = revealed.filter((r) => String(r.args.oracle).toLowerCase() === me).reverse();
   const finalOf = (eventId: number) => finalized.find((f) => Number(f.args.eventId) === eventId);

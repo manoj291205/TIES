@@ -280,6 +280,10 @@ export interface EscalationPanelProps {
   commit?: [string, string];
   reveal?: [string, string];
   received?: number;
+  /** Committee size, when it differs from the number of named sources. */
+  expected?: number;
+  /** False for a round that was not escalated (round 1): the panel then just shows the round. */
+  escalated?: boolean;
   style?: CSSProperties;
 }
 
@@ -292,6 +296,8 @@ export function EscalationPanel({
   commit,
   reveal,
   received,
+  expected,
+  escalated = true,
   style,
 }: EscalationPanelProps) {
   const boxes: [string, "commit" | "reveal", [string, string] | undefined][] = [
@@ -310,15 +316,25 @@ export function EscalationPanel({
       >
         <div className="ties-row" style={{ color: "var(--held-ink)", fontWeight: 600 }}>
           <Icon name="layers" />
-          Escalation requested · Round {round}
+          {escalated
+            ? `Escalation requested · Round ${round}`
+            : `Round ${round} · evidence requested`}
         </div>
-        <div className="ties-mono" style={{ marginTop: 6, fontSize: 13 }}>
-          Held <b>{fmtEth(held, 1)} ETH</b> &gt; trigger {fmtEth(trigger, 1)} ETH
-        </div>
-        <div style={{ fontSize: 13, marginTop: 2 }}>
-          → requesting {sources.length} new source{sources.length === 1 ? "" : "s"}:{" "}
-          <b>{sources.join(", ")}</b>
-        </div>
+        {escalated ? (
+          <>
+            <div className="ties-mono" style={{ marginTop: 6, fontSize: 13 }}>
+              Held <b>{fmtEth(held, 1)} ETH</b> &gt; trigger {fmtEth(trigger, 1)} ETH
+            </div>
+            <div style={{ fontSize: 13, marginTop: 2 }}>
+              → requesting {sources.length} new source{sources.length === 1 ? "" : "s"}:{" "}
+              <b>{sources.join(", ")}</b>
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 13, marginTop: 6 }}>
+            Committee of {expected ?? sources.length}: <b>{sources.join(", ")}</b>
+          </div>
+        )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {boxes.map(([title, key, data]) => {
@@ -359,7 +375,7 @@ export function EscalationPanel({
         >
           <span>Commits received</span>
           <span className="ties-mono">
-            {received} / {sources.length}
+            {received} / {expected ?? sources.length}
           </span>
         </div>
       ) : null}

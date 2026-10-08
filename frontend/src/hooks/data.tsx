@@ -155,6 +155,14 @@ export function useEventState(eventId: number | null) {
           read.engine.payCursor(eventId),
           read.engine.noPayCursor(eventId),
         ]);
+        // Before round 1 the engine has not stored the axis yet; read it from the event's parameters.
+        let bucketCount = Number(st.bucketCount);
+        let noPayCursor = Number(noPay);
+        if (bucketCount === 0) {
+          const p = await read.registry.getParams(data.category, data.version);
+          bucketCount = Number(p.bucketCount);
+          noPayCursor = bucketCount;
+        }
         if (!alive) return;
         setView({
           id: eventId,
@@ -175,11 +183,11 @@ export function useEventState(eventId: number | null) {
           revealDeadline: Number(st.revealDeadline),
           challengeDeadline: Number(st.challengeDeadline),
           payCursor: Number(pay),
-          noPayCursor: Number(noPay),
+          noPayCursor,
           held,
           settledPay: st.settledPay,
           settledNoPay: st.settledNoPay,
-          bucketCount: Number(st.bucketCount),
+          bucketCount,
           disputeReason: Number(st.disputeReason),
         });
         setError(null);

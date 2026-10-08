@@ -115,6 +115,14 @@ export function TxLog() {
           onChange={setContract}
           options={contracts.map((c) => ({ value: c, label: c === "all" ? "All" : c }))}
         />
+        {eventFilter ? (
+          <span className="ties-chip ties-chip--info">Event #{eventFilter} only</span>
+        ) : null}
+        {txFilter ? (
+          <span className="ties-chip ties-chip--info ties-mono">
+            Transaction {txFilter.slice(0, 10)}…
+          </span>
+        ) : null}
         {txFilter || eventFilter ? (
           <Button size="sm" variant="ghost" icon="x" onClick={() => setParams({})}>
             Clear filter
