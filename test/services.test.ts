@@ -32,6 +32,7 @@ describe("Off-chain services (integration)", function () {
   const SOURCE_OFFSET = 300;
   const ORACLE_PORT = 7500;
   const DEMO_PORT = 7600;
+  const KEEPER_PORT = 7700;
 
   let node: ChildProcess;
   let tmp: string;
@@ -69,12 +70,13 @@ describe("Off-chain services (integration)", function () {
       port: ORACLE_PORT,
       sourcePortOffset: SOURCE_OFFSET,
     });
-    keeper = startKeeper({ rpcUrl, pollMs: 300 });
+    keeper = startKeeper({ rpcUrl, pollMs: 300, port: KEEPER_PORT });
 
     const urls = {
       source: (id: number) =>
         `http://127.0.0.1:${SOURCES.find((s) => s.id === id)!.port + SOURCE_OFFSET}`,
       oracle: `http://127.0.0.1:${ORACLE_PORT}`,
+      keeper: `http://127.0.0.1:${KEEPER_PORT}`,
     };
     const log = makeLogger("it");
     const deployments = new DeploymentWatcher(31337);

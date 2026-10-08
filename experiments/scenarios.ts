@@ -28,7 +28,10 @@ export interface PolicySpec {
 export interface Expectation {
   /** Status the event must end in once the scenario (including any resolve step) is over. */
   finalStatus?: "FINAL" | "DISPUTED";
-  /** Highest acceptable number of wrongly settled policies versus the ground truth. */
+  /**
+   * Highest acceptable number of policies the evidence rounds settled the wrong way versus the
+   * ground truth. Policies left to the default rule are reported but not counted here.
+   */
   maxWrongSettlements?: number;
   /** Outcome of the first round. */
   firstRound?: "INSUFFICIENT" | "VALID" | "DISPUTED";

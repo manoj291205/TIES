@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from "ethers";
+import { JsonRpcProvider, getAddress, isAddress } from "ethers";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -217,6 +217,16 @@ export class DemoServer {
     }
 
     if (route === "POST /fund") {
+      const body = (await readBody(req)) as { address?: string } | undefined;
+      if (body?.address) {
+        // Any wallet, e.g. the presenter's own MetaMask account: 100 test ETH on this chain only.
+        if (!isAddress(body.address)) throw new HttpError(400, "not an address");
+        await this.provider.send("hardhat_setBalance", [
+          getAddress(body.address),
+          "0x56bc75e2d63100000",
+        ]);
+        return sendJson(res, 200, { ok: true, address: getAddress(body.address), eth: 100 });
+      }
       for (let i = 0; i < 20; i++) {
         await this.provider.send("hardhat_setBalance", [
           hardhatAccount(i).address,
@@ -245,6 +255,17 @@ export class DemoServer {
 
     if (route === "GET /nodes") {
       return sendJson(res, 200, await getJson(`${this.urls.oracle}/status`));
+    }
+
+    if (route === "GET /keeper") {
+      if (!this.urls.keeper) throw new HttpError(404, "no keeper configured");
+      return sendJson(res, 200, await getJson(`${this.urls.keeper}/status`));
+    }
+
+    if (route === "POST /keeper/pause" || route === "POST /keeper/resume") {
+      if (!this.urls.keeper) throw new HttpError(404, "no keeper configured");
+      const action = route.endsWith("pause") ? "pause" : "resume";
+      return sendJson(res, 200, await postJson(`${this.urls.keeper}/${action}`));
     }
 
     if (route === "GET /runs") {

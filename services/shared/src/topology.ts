@@ -133,8 +133,9 @@ export const ACCOUNTS = {
 
 export const HARDHAT_MNEMONIC = "test test test test test test test test test test test junk";
 
-export const PORTS: { oracleNode: number; demoServer: number; rpc: number } = {
+export const PORTS: { oracleNode: number; keeper: number; demoServer: number; rpc: number } = {
   oracleNode: 7200,
+  keeper: 7300,
   demoServer: 7000,
   rpc: 8545,
 };

@@ -1,3 +1,4 @@
+import http from "node:http";
 import { Contract, JsonRpcProvider } from "ethers";
 import {
   ACCOUNTS,
@@ -10,7 +11,11 @@ import {
   defaultRpcUrl,
   describeError,
   errorMessage,
+  handlePreflight,
   hardhatSigner,
+  HttpError,
+  PORTS,
+  sendJson,
   type SerialWallet,
   makeLogger,
   makeProvider,
@@ -39,6 +44,9 @@ export class Keeper {
   private seenVersion = -1;
   private timer?: NodeJS.Timeout;
   private ticking = false;
+  private server?: http.Server;
+  /** While paused the keeper sends nothing; rounds wait for a manual call (presenter demos). */
+  paused = false;
   /** Calls that reverted recently, to avoid hammering the node every tick. */
   private readonly cooldown = new Map<string, number>();
   readonly actions: KeeperAction[] = [];
@@ -58,10 +66,46 @@ export class Keeper {
 
   stop(): void {
     if (this.timer) clearInterval(this.timer);
+    this.server?.close();
+  }
+
+  /** Pause or resume automatic calls. */
+  setPaused(paused: boolean): void {
+    if (this.paused !== paused) this.log.info(paused ? "paused" : "resumed");
+    this.paused = paused;
+  }
+
+  status(): { paused: boolean; actions: KeeperAction[] } {
+    return { paused: this.paused, actions: this.actions.slice(-20) };
+  }
+
+  /** Control endpoint: GET /status, POST /pause, POST /resume (127.0.0.1 only). */
+  listen(port = PORTS.keeper): Promise<void> {
+    this.server = http.createServer((req, res) => {
+      try {
+        if (handlePreflight(req, res)) return;
+        const path = new URL(req.url ?? "/", "http://localhost").pathname;
+        if (path === "/status" || path === "/health") return sendJson(res, 200, this.status());
+        if (req.method === "POST" && (path === "/pause" || path === "/resume")) {
+          this.setPaused(path === "/pause");
+          return sendJson(res, 200, this.status());
+        }
+        throw new HttpError(404, "not found");
+      } catch (err) {
+        sendJson(res, err instanceof HttpError ? err.status : 500, { error: errorMessage(err) });
+      }
+    });
+    return new Promise((resolve, reject) => {
+      this.server!.once("error", reject);
+      this.server!.listen(port, "127.0.0.1", () => {
+        this.log.info(`control on http://127.0.0.1:${port}/status`);
+        resolve();
+      });
+    });
   }
 
   async tick(): Promise<void> {
-    if (this.ticking) return;
+    if (this.ticking || this.paused) return;
     this.ticking = true;
     try {
       const d = this.deployments.current();
@@ -95,6 +139,10 @@ export class Keeper {
     }
   }
 
+  warn(message: string): void {
+    this.log.warn(message);
+  }
+
   private async call(action: KeeperAction["action"], eventId: number): Promise<void> {
     const key = `${action}:${eventId}`;
     const wait = this.cooldown.get(key);
@@ -122,11 +170,14 @@ export class Keeper {
 }
 
 export function startKeeper(
-  opts: { rpcUrl?: string; chainId?: number; pollMs?: number } = {},
+  opts: { rpcUrl?: string; chainId?: number; pollMs?: number; port?: number | null } = {},
 ): Keeper {
   const chainId = opts.chainId ?? defaultChainId();
   const provider = makeProvider(opts.rpcUrl ?? defaultRpcUrl(), chainId);
   const keeper = new Keeper(provider, new DeploymentWatcher(chainId), makeLogger("keeper"));
   keeper.start(opts.pollMs);
+  if (opts.port !== null) {
+    keeper.listen(opts.port).catch((err) => keeper.warn(`control endpoint: ${errorMessage(err)}`));
+  }
   return keeper;
 }

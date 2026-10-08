@@ -36,7 +36,10 @@
     "dev:web": "npm -w frontend run dev",
     "experiments": "hardhat run experiments/run.ts",
     "experiments:charts": "node -r ts-node/register/transpile-only experiments/charts.ts",
-    "experiments:report": "node -r ts-node/register/transpile-only experiments/report.ts"
+    "experiments:report": "node -r ts-node/register/transpile-only experiments/report.ts",
+    "accounts": "node -r ts-node/register/transpile-only scripts/accounts.ts",
+    "watch": "node -r ts-node/register/transpile-only scripts/watch.ts",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -49,6 +52,7 @@
     "@nomicfoundation/hardhat-verify": "2.0.12",
     "@nomicfoundation/ignition-core": "0.15.8",
     "@openzeppelin/contracts": "^5.1.0",
+    "@playwright/test": "^1.64.0",
     "@resvg/resvg-js": "^2.6.2",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
